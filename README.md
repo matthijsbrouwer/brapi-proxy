@@ -7,17 +7,25 @@ Start the service with `python service.py` or use the `service.sh` script.
 ### Supported
 
 - BrAPI-Core
-  - commoncropnames
-  - studies
+  - /commoncropnames
+  - /studies
+  - /studies/{studyDbId}
 - BrAPI-Genotyping
-  - variantsets
-  - samples
-  - allelematrix
-  - callsets
-  - references
-  - plates
-  - variants
-  - referencesets
+  - /callsets
+  - /callsets/{callSetDbId}
+  - /variants
+  - /variants/{variantDbId}
+  - /variantsets
+  - /variantsets/{variantSetDbId}
+  - /plates
+  - /plates/{plateDbId}
+  - /samples
+  - /samples/{sampleDbId}
+  - /references
+  - /references/{referenceDbId}
+  - /referencesets
+  - /referencesets/{referenceSetDbId}
+  - /allelematrix
 
 ### Configuration
 
