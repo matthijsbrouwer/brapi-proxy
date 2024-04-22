@@ -4,6 +4,21 @@ Create a file `config.ini` (see `config_demo.ini` for an example) with the requi
 
 Start the service with `python service.py` or use the `service.sh` script.
 
+### Supported
+
+- BrAPI-Core
+  - commoncropnames
+  - studies
+- BrAPI-Genotyping
+  - variantsets
+  - samples
+  - allelematrix
+  - callsets
+  - references
+  - plates
+  - variants
+  - referencesets
+
 ### Configuration
 
 Include at least the `brapi` section:
