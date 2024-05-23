@@ -24,14 +24,14 @@ A BRAPI server instance that functions as a proxy for endpoints from existing BR
 
 - **Step 2: Start the Service**
   - Start the service by running the command:
-    ``` sh
+    ```sh
     brapi_proxy
     ```
   - If the config.ini file is located outside the working directory, use the --config option to specify its location. For example:
-
     ```sh
     brapi_proxy --config /path/to/config.ini
     ```
+    
 ---
 
 ### Currently Supported
@@ -64,8 +64,13 @@ A BRAPI server instance that functions as a proxy for endpoints from existing BR
 
 ### Structure Configuration File
 
+Create a `config.ini` file with the necessary configuration settings.
+
+**Basic Configuration**
+
 Include at least the `brapi` section:
-```
+
+```config
 [brapi]
 port=8080
 host=::
@@ -74,14 +79,20 @@ debug=False
 version=2.1
 ```
 
-Optionally provide authentication tokens to restrict access in the `authorization` section:
+**Optional: Authorization**
+
+Optionally, provide authentication tokens to restrict access in the `authorization` section:
+
 ```
 [authorization]
 john=tokenjohn123abc
 mary=tokenmary456def
 ```
 
-Within sections prefixed with `server.` the underlying servers can be defined:
+**Server Definitions**
+
+Within sections prefixed with `server.`, define the underlying servers:
+
 ```
 [server.test1]
 url=https://test-server.brapi.org/brapi/v2
