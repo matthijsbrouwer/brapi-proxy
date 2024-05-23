@@ -90,7 +90,7 @@ class GenotypingAllelematrix(Resource):
             return response
         
         
-logger = logging.getLogger("brapi")
+logger = logging.getLogger("brapi.handler")
 
 def _brapiRepaginateAllelematrixServerRequest(server, serverParams, supportedCalls,
                                                 subStartVariants, subEndVariants, 

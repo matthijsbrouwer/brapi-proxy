@@ -3,6 +3,14 @@
 
 A BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services.
 
+## Installation
+
+```
+pip install brapi_proxy
+```
+
+### Usage
+
 - **Step 1: Create Configuration File**
   - Create a file named config.ini.
   - Populate this file with the necessary configuration settings.
@@ -47,15 +55,15 @@ A BRAPI server instance that functions as a proxy for endpoints from existing BR
   - /referencesets/{referenceSetDbId}
   - /allelematrix
 
-### Configuration
+### Structure Configuration File
 
 Include at least the `brapi` section:
 ```
 [brapi]
-port=5000
-host=0.0.0.0
-threads=10
-debug=True
+port=8080
+host=::
+threads=4
+debug=False
 version=2.1
 ```
 

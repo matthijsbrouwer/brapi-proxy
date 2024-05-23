@@ -14,7 +14,7 @@ args = parser.parse_args()
 logging.basicConfig(format="%(asctime)s | %(name)s |  %(levelname)s: %(message)s",
                     datefmt="%m-%d-%y %H:%M:%S")
 logging.getLogger("brapi.server").setLevel(logging.DEBUG)
-logging.getLogger("brapi").setLevel(logging.DEBUG)
+logging.getLogger("brapi.handler").setLevel(logging.DEBUG)
 
 def service():
     if args.demo:
