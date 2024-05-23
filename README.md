@@ -61,6 +61,13 @@ A BRAPI server instance that functions as a proxy for endpoints from existing BR
   - /referencesets
   - /referencesets/{referenceSetDbId}
   - /allelematrix
+  
+### ToDo
+
+- Implement additional endpoints
+- Enable authentication for underlying servers
+  
+---
 
 ### Structure Configuration File
 
