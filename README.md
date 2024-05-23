@@ -1,20 +1,21 @@
 # BrAPI proxy solution
 
 
-A BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services.
+A BrAPI server instance that functions as a proxy for endpoints from existing BrAPI services.
 
 ## Installation
 
 - **Step 1: Install BrAPI Proxy**
-  - To install the BRAPI Proxy, run the following command:
+  - To install the BrAPI Proxy, run the following command:
     ```sh
     pip install brapi_proxy
     ```
 - **Step 2: Test the Installation (Optional)**
-  - To ensure that the installation was successful, you can run the BRAPI Proxy in demo mode with the following command:
+  - To ensure that the installation was successful, you can run the BrAPI Proxy in demo mode with the following command:
     ```sh
     brapi_proxy --demo
     ```
+    This will start a [service on port 8080](http://localhost:8080/) from a configuration based on the BrAPI Test Server
 
 ## Usage
 
