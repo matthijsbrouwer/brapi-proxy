@@ -81,7 +81,7 @@ Include at least the `brapi` section:
 ```config
 [brapi]
 port=8080
-host=::
+host=0.0.0.0
 threads=4
 debug=False
 version=2.1

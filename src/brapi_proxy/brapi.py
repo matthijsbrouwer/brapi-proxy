@@ -166,7 +166,7 @@ class BrAPI:
         app.config.SWAGGER_UI_DOC_EXPANSION = "list"
 
         #--- start webserver ---
-        server_host = self.config.get("brapi","host", fallback="::")
+        server_host = self.config.get("brapi","host", fallback="0.0.0.0")
         server_port = self.config.get("brapi","port", fallback="8080")
         server_threads = self.config.get("brapi","threads", fallback="4")
         self.logger.info("start server on host %s and port %s with %s threads",
