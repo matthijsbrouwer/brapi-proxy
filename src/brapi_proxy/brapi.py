@@ -62,7 +62,8 @@ class BrAPI:
                     template_folder=os.path.join(self.location,"templates"))
         app.config["location"] = self.location
         #blueprint
-        blueprint = Blueprint("brapi", __name__, url_prefix="/")
+        server_location = self.config.get("brapi","location", fallback="/")
+        blueprint = Blueprint("brapi", __name__, url_prefix=server_location)
         authorizations = {
             "apikey": {
                 "type": "apiKey",

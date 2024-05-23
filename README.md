@@ -82,6 +82,7 @@ Include at least the `brapi` section:
 [brapi]
 port=8080
 host=0.0.0.0
+location=/
 threads=4
 debug=False
 version=2.1
