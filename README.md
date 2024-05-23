@@ -15,7 +15,7 @@ A BrAPI server instance that functions as a proxy for endpoints from existing Br
     ```sh
     brapi_proxy --demo
     ```
-    This will start a [service on port 8080](http://localhost:8080/) from a configuration based on the BrAPI Test Server
+    This will start a [service on port 8080](http://localhost:8080/) from a configuration based on the [BrAPI Test Server](https://test-server.brapi.org/brapi/v2/)
 
 ## Usage
 
