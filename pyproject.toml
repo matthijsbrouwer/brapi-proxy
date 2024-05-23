@@ -6,12 +6,12 @@ authors = [
 description = "A BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services"
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dynamic = ["dependencies","version"]
 classifiers = [
     "Topic :: Internet :: Proxy Servers",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.10",
     "Operating System :: OS Independent"
 ]
 
