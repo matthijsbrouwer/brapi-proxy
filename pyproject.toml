@@ -3,7 +3,7 @@ name = "brapi-proxy"
 authors = [
   { name="Matthijs Brouwer", email="matthijs.brouwer@wur.nl" },
 ]
-description = "A BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services"
+description = "A BRAPI server instance that functions as a proxy to merge and combine endpoints from existing BRAPI services"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.10"
