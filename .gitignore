@@ -7,5 +7,4 @@ brapi_proxy.egg-info
 /dist
 /config.ini
 /config_*
-/docker
 /publish.txt

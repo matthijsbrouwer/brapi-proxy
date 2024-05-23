@@ -1,0 +1,7 @@
+services:
+  brapi-proxy:
+    build: .
+    volumes:
+      - ../src/brapi_proxy/config_demo.ini:/brapi/config.ini
+    ports:
+      - "8080:8080"
