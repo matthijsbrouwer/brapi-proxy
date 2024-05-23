@@ -1,9 +1,9 @@
-from flask import Response, abort, request
+from flask import Response, abort
 from flask_restx import Resource
 import json
 
-from service import brapi
-from service.core import ns_api_core as namespace
+from .. import handler
+from . import ns_api_core as namespace
 
 parser = namespace.parser()
 parser.add_argument("contentType", type=str, required=False, 
@@ -19,7 +19,7 @@ parser.add_argument("Authorization", type=str, required=False,
 class CoreServerinfo(Resource):
 
     @namespace.expect(parser, validate=True)
-    @brapi.authorization
+    @handler.authorization
     def get(self):
         args = parser.parse_args(strict=True)
         try:
@@ -31,7 +31,7 @@ class CoreServerinfo(Resource):
                     "methods": [method.upper() for method in definition.keys() 
                                 if method.upper() in ["GET","PUT","POST","DELETE"]],
                     "service": str(call).removeprefix("/"),
-                    "versions":[self.api.config.get("brapi","version")]
+                    "versions":[self.api.version]
                 }
                 result["calls"].append(entry)
             if not args["contentType"] is None:
@@ -42,6 +42,6 @@ class CoreServerinfo(Resource):
                          "organizationURL","serverDescription","serverName"]:
                 if self.api.config.has_option("serverinfo",item):
                     result[item] = str(self.api.config.get("serverinfo",item))
-            return Response(json.dumps(brapi.BrAPI._brapiResponse(result)), mimetype="application/json") 
+            return Response(json.dumps(handler.brapiResponse(result)), mimetype="application/json") 
         except Exception as e:
             abort(e.code if hasattr(e,"code") else 500, str(e))

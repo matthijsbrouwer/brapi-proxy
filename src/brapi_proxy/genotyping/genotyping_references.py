@@ -1,19 +1,25 @@
-from flask import Response, abort, request
-from flask_restx import Resource, reqparse
+from flask import Response
+from flask_restx import Resource
 import json
 
-from service import brapi
-from service.genotyping import ns_api_genotyping as namespace
+from .. import handler
+from . import ns_api_genotyping as namespace
 
 parser = namespace.parser()
+parser.add_argument("referenceDbId", type=str, required=False,
+                    help="The ID of the `Reference` to be retrieved.")
 parser.add_argument("referenceSetDbId", type=str, required=False,
                     help="The ID of the `ReferenceSet` to be retrieved.")
 parser.add_argument("accession", type=str, required=False,
                     help="If set, return the reference sets for which the `accession` matches this string (case-sensitive, exact match).")
-parser.add_argument("assemblyPUI", type=str, required=False,
-                    help="If set, return the reference sets for which the `assemblyId` matches this string (case-sensitive, exact match).")
 parser.add_argument("md5checksum", type=str, required=False,
-                    help="If set, return the reference sets for which the `md5checksum` matches this string (case-sensitive, exact match).")
+                    help="If specified, return the references for which the `md5checksum` matches this string (case-sensitive, exact match).")
+parser.add_argument("isDerived", type=bool, required=False,
+                    help="If the reference is derived from a source sequence")
+parser.add_argument("minLength", type=int, required=False,
+                    help="The minimum length of the reference sequences to be retrieved.")
+parser.add_argument("maxLength", type=int, required=False,
+                    help="The maximum length of the reference sequences to be retrieved.")
 parser.add_argument("commonCropName", type=str, required=False,
                     help="The BrAPI Common Crop Name is the simple, generalized, widely accepted name of the organism being researched. It is most often used in multi-crop systems where digital resources need to be divided at a high level. Things like 'Maize', 'Wheat', and 'Rice' are examples of common crop names.\n\nUse this parameter to only return results associated with the given crop. \n\nUse `GET /commoncropnames` to find the list of available crops on a server.")
 parser.add_argument("programDbId", type=str, required=False,
@@ -34,10 +40,10 @@ parser.add_argument("Authorization", type=str, required=False,
         help="HTTP HEADER - Token used for Authorization<br>**Bearer {token_string}**", 
         location="headers")
 
-class GenotypingReferenceSets(Resource):
+class GenotypingReferences(Resource):
 
     @namespace.expect(parser, validate=True)
-    @brapi.authorization
+    @handler.authorization
     def get(self):
         args = parser.parse_args(strict=True)
         try:            
@@ -49,8 +55,8 @@ class GenotypingReferenceSets(Resource):
                 if not key in ["page","pageSize","Authorization"]:
                     if not value is None:
                         params[key] = value
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiRepaginateRequestResponse(
-                self.api.brapi, "referencesets", params=params)
+            brapiResponse,brapiStatus,brapiError = handler.brapiRepaginateRequestResponse(
+                self.api.brapi, "references", params=params)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
             else:
@@ -68,15 +74,15 @@ parserId.add_argument("Authorization", type=str, required=False,
         help="HTTP HEADER - Token used for Authorization<br>**Bearer {token_string}**", 
         location="headers")
             
-class GenotypingReferenceSetsId(Resource):
+class GenotypingReferencesId(Resource):
 
     @namespace.expect(parserId, validate=True)
-    @brapi.authorization
-    def get(self,referenceSetDbId):
-        args = parser.parse_args(strict=True)
+    @handler.authorization
+    def get(self,referenceDbId):
+        parser.parse_args(strict=True)
         try:
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiIdRequestResponse(
-                self.api.brapi, "referencesets", "referenceSetDbId", referenceSetDbId)
+            brapiResponse,brapiStatus,brapiError = handler.brapiIdRequestResponse(
+                self.api.brapi, "references", "referenceDbId", referenceDbId)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
             else:

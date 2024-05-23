@@ -1,9 +1,9 @@
-from flask import Response, abort, request
-from flask_restx import Resource, reqparse
+from flask import Response
+from flask_restx import Resource
 import json
 
-from service import brapi
-from service.genotyping import ns_api_genotyping as namespace
+from .. import handler
+from . import ns_api_genotyping as namespace
 
 parser = namespace.parser()
 parser.add_argument("callSetDbId", type=str, required=False,
@@ -27,7 +27,7 @@ parser.add_argument("Authorization", type=str, required=False,
 class GenotypingCallSets(Resource):
 
     @namespace.expect(parser, validate=True)
-    @brapi.authorization
+    @handler.authorization
     def get(self):
         args = parser.parse_args(strict=True)
         try:            
@@ -39,7 +39,7 @@ class GenotypingCallSets(Resource):
                 if not key in ["page","pageSize","Authorization"]:
                     if not value is None:
                         params[key] = value
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiRepaginateRequestResponse(
+            brapiResponse,brapiStatus,brapiError = handler.brapiRepaginateRequestResponse(
                 self.api.brapi, "callsets", params=params)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
@@ -61,11 +61,11 @@ parserId.add_argument("Authorization", type=str, required=False,
 class GenotypingCallSetsId(Resource):
 
     @namespace.expect(parserId, validate=True)
-    @brapi.authorization
+    @handler.authorization
     def get(self,callSetDbId):
-        args = parser.parse_args(strict=True)
+        parser.parse_args(strict=True)
         try:
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiIdRequestResponse(
+            brapiResponse,brapiStatus,brapiError = handler.brapiIdRequestResponse(
                 self.api.brapi, "callsets", "callSetDbId", callSetDbId)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")

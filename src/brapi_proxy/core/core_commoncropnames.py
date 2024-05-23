@@ -1,9 +1,9 @@
-from flask import Response, abort, request
+from flask import Response
 from flask_restx import Resource
 import json
 
-from service import brapi
-from service.core import ns_api_core as namespace
+from .. import handler
+from . import ns_api_core as namespace
 
 parser = namespace.parser()
 parser.add_argument("page", type=int, required=False, 
@@ -17,7 +17,7 @@ parser.add_argument("Authorization", type=str, required=False,
 class CoreCommoncropnames(Resource):
 
     @namespace.expect(parser, validate=True)
-    @brapi.authorization
+    @handler.authorization
     def get(self):
         args = parser.parse_args(strict=True)
         try:
@@ -29,7 +29,7 @@ class CoreCommoncropnames(Resource):
                 if not key in ["page","pageSize","Authorization"]:
                     if not value is None:
                         params[key] = value
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiRepaginateRequestResponse(
+            brapiResponse,brapiStatus,brapiError = handler.brapiRepaginateRequestResponse(
                 self.api.brapi, "commoncropnames", params=params)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")

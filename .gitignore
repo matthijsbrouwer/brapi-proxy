@@ -1,5 +1,11 @@
 __pycache__
+.DS_Store
+.ipynb_checkpoints
+brapi_proxy.egg-info
+*.ipynb
+/build
+/dist
 /config.ini
 /config_*
 !/config_demo.ini
-docker
+/docker

@@ -4,14 +4,14 @@ ns_api_genotyping = Namespace("genotyping",
     description="The BrAPI-Genotyping module contains entities related to genotyping analysis.", 
     path="/")
 
-from service.genotyping.genotyping_variants import GenotypingVariants,GenotypingVariantsId
-from service.genotyping.genotyping_samples import GenotypingSamples,GenotypingSamplesId
-from service.genotyping.genotyping_plates import GenotypingPlates,GenotypingPlatesId
-from service.genotyping.genotyping_references import GenotypingReferences,GenotypingReferencesId
-from service.genotyping.genotyping_variantsets import GenotypingVariantSets,GenotypingVariantSetsId
-from service.genotyping.genotyping_referencesets import GenotypingReferenceSets,GenotypingReferenceSetsId
-from service.genotyping.genotyping_callsets import GenotypingCallSets,GenotypingCallSetsId
-from service.genotyping.genotyping_allelematrix import GenotypingAllelematrix
+from .genotyping_variants import GenotypingVariants,GenotypingVariantsId
+from .genotyping_samples import GenotypingSamples,GenotypingSamplesId
+from .genotyping_plates import GenotypingPlates,GenotypingPlatesId
+from .genotyping_references import GenotypingReferences,GenotypingReferencesId
+from .genotyping_variantsets import GenotypingVariantSets,GenotypingVariantSetsId
+from .genotyping_referencesets import GenotypingReferenceSets,GenotypingReferenceSetsId
+from .genotyping_callsets import GenotypingCallSets,GenotypingCallSetsId
+from .genotyping_allelematrix import GenotypingAllelematrix
 
 calls_api_genotyping = {
     "variants": [(GenotypingVariants,"/variants"),

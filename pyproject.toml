@@ -1,0 +1,41 @@
+[project]
+name = "brapi-proxy"
+version = "0.0.1"
+authors = [
+  { name="Matthijs Brouwer", email="matthijs.brouwer@wur.nl" },
+]
+description = "A BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+dynamic = ["dependencies"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/matthijsbrouwer/brapi-proxy"
+
+[project.scripts]
+brapi_proxy = "brapi_proxy.service:service"
+
+[build-system]
+requires = [
+    "read_version",
+    "setuptools",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+brapi_proxy = ["*.ini"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.read_version.version]
+path = ["src", "brapi_proxy", "__init__.py"]
+variable = "__version__"
+
+

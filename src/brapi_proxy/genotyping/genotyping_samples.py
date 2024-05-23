@@ -1,25 +1,23 @@
-from flask import Response, abort, request
-from flask_restx import Resource, reqparse
+from flask import Response
+from flask_restx import Resource
 import json
 
-from service import brapi
-from service.genotyping import ns_api_genotyping as namespace
+from .. import handler
+from . import ns_api_genotyping as namespace
 
 parser = namespace.parser()
-parser.add_argument("referenceDbId", type=str, required=False,
-                    help="The ID of the `Reference` to be retrieved.")
-parser.add_argument("referenceSetDbId", type=str, required=False,
-                    help="The ID of the `ReferenceSet` to be retrieved.")
-parser.add_argument("accession", type=str, required=False,
-                    help="If set, return the reference sets for which the `accession` matches this string (case-sensitive, exact match).")
-parser.add_argument("md5checksum", type=str, required=False,
-                    help="If specified, return the references for which the `md5checksum` matches this string (case-sensitive, exact match).")
-parser.add_argument("isDerived", type=bool, required=False,
-                    help="If the reference is derived from a source sequence")
-parser.add_argument("minLength", type=int, required=False,
-                    help="The minimum length of the reference sequences to be retrieved.")
-parser.add_argument("maxLength", type=int, required=False,
-                    help="The maximum length of the reference sequences to be retrieved.")
+parser.add_argument("sampleDbId", type=str, required=False,
+                    help="The unique identifier for a `Sample`")
+parser.add_argument("sampleName", type=str, required=False,
+                    help="The human readable name of the `Sample`")
+parser.add_argument("sampleGroupDbId", type=str, required=False,
+                    help="The unique identifier for a group of related `Samples`")
+parser.add_argument("observationUnitDbId", type=str, required=False,
+                    help="The ID which uniquely identifies an `ObservationUnit`")
+parser.add_argument("plateDbId", type=str, required=False,
+                    help="The ID which uniquely identifies a `Plate` of `Sample`")
+parser.add_argument("plateName", type=str, required=False,
+                    help="The human readable name of a `Plate` of `Sample`")
 parser.add_argument("commonCropName", type=str, required=False,
                     help="The BrAPI Common Crop Name is the simple, generalized, widely accepted name of the organism being researched. It is most often used in multi-crop systems where digital resources need to be divided at a high level. Things like 'Maize', 'Wheat', and 'Rice' are examples of common crop names.\n\nUse this parameter to only return results associated with the given crop. \n\nUse `GET /commoncropnames` to find the list of available crops on a server.")
 parser.add_argument("programDbId", type=str, required=False,
@@ -28,6 +26,10 @@ parser.add_argument("trialDbId", type=str, required=False,
                     help="Use this parameter to only return results associated with the given `Trial` unique identifier. \n<br/>Use `GET /trials` to find the list of available `Trials` on a server.")
 parser.add_argument("studyDbId", type=str, required=False,
                     help="Use this parameter to only return results associated with the given `Study` unique identifier. \n<br/>Use `GET /studies` to find the list of available `Studies` on a server.")
+parser.add_argument("germplasmDbId", type=str, required=False,
+                    help="Use this parameter to only return results associated with the given `Germplasm` unique identifier. \n<br/>Use `GET /germplasm` to find the list of available `Germplasm` on a server.")
+parser.add_argument("externalReferenceID", type=str, required=False,
+                    help="**Deprecated in v2.1** Please use `externalReferenceId`. Github issue number #460 \n<br>An external reference ID. Could be a simple string or a URI. (use with `externalReferenceSource` parameter)")
 parser.add_argument("externalReferenceId", type=str, required=False,
                     help="An external reference ID. Could be a simple string or a URI. (use with `externalReferenceSource` parameter)")
 parser.add_argument("externalReferenceSource", type=str, required=False,
@@ -40,10 +42,10 @@ parser.add_argument("Authorization", type=str, required=False,
         help="HTTP HEADER - Token used for Authorization<br>**Bearer {token_string}**", 
         location="headers")
 
-class GenotypingReferences(Resource):
+class GenotypingSamples(Resource):
 
     @namespace.expect(parser, validate=True)
-    @brapi.authorization
+    @handler.authorization
     def get(self):
         args = parser.parse_args(strict=True)
         try:            
@@ -55,8 +57,8 @@ class GenotypingReferences(Resource):
                 if not key in ["page","pageSize","Authorization"]:
                     if not value is None:
                         params[key] = value
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiRepaginateRequestResponse(
-                self.api.brapi, "references", params=params)
+            brapiResponse,brapiStatus,brapiError = handler.brapiRepaginateRequestResponse(
+                self.api.brapi, "samples", params=params)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
             else:
@@ -74,15 +76,15 @@ parserId.add_argument("Authorization", type=str, required=False,
         help="HTTP HEADER - Token used for Authorization<br>**Bearer {token_string}**", 
         location="headers")
             
-class GenotypingReferencesId(Resource):
+class GenotypingSamplesId(Resource):
 
     @namespace.expect(parserId, validate=True)
-    @brapi.authorization
-    def get(self,referenceDbId):
-        args = parser.parse_args(strict=True)
+    @handler.authorization
+    def get(self,sampleDbId):
+        parser.parse_args(strict=True)
         try:
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiIdRequestResponse(
-                self.api.brapi, "references", "referenceDbId", referenceDbId)
+            brapiResponse,brapiStatus,brapiError = handler.brapiIdRequestResponse(
+                self.api.brapi, "samples", "sampleDbId", sampleDbId)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
             else:

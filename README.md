@@ -1,8 +1,39 @@
 # BrAPI proxy solution
 
-Create a file `config.ini` (see `config_demo.ini` for an example) with the required configuration.
 
-Start the service with `python service.py` or use the `service.sh` script.
+A BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services.
+
+```
+usage: brapi_proxy [-h] [--config [CONFIG]] [--demo]
+
+Start a BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services.
+
+options:
+  -h, --help         show this help message and exit
+  --config [CONFIG]  alternative location of configuration file
+  --demo             start a demonstration service from a configuration based on the BrAPI Test
+                     Server
+```
+
+
+## Configuration
+
+
+- Step 1: Create Configuration File
+  - Create a file named config.ini.
+  - Populate this file with the necessary configuration settings.
+
+- Step 2: Start the Service
+  - Start the service by running the command:
+    ``` sh
+    brapi_proxy
+    ```
+  - If the config.ini file is located outside the working directory, use the --config option to specify its location. For example:
+
+    ```sh
+    brapi_proxy --config /path/to/config.ini
+    ```
+
 
 ### Supported
 

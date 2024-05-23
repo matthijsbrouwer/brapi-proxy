@@ -1,9 +1,9 @@
-from flask import Response, abort, request
+from flask import Response
 from flask_restx import Resource
 import json
 
-from service import brapi
-from service.genotyping import ns_api_genotyping as namespace
+from .. import handler
+from . import ns_api_genotyping as namespace
 
 parser = namespace.parser()
 parser.add_argument("variantDbId", type=str, required=False, 
@@ -29,19 +29,19 @@ parser.add_argument("Authorization", type=str, required=False,
 class GenotypingVariants(Resource):
 
     @namespace.expect(parser, validate=True)
-    @brapi.authorization
+    @handler.authorization
     def get(self):
         args = parser.parse_args(strict=True)
         try:
             #get parameters
-            page = int(request.args.get("page",0))
-            pageSize = int(request.args.get("pageSize",1000))
+            page = int(args["page"]) if not args["page"] is None else 0
+            pageSize = int(args["pageSize"]) if not args["pageSize"] is None else 1000
             params = {"page": page, "pageSize": pageSize}
             for key,value in args.items():
                 if not key in ["page","pageSize","Authorization"]:
                     if not value is None:
                         params[key] = value
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiRepaginateRequestResponse(
+            brapiResponse,brapiStatus,brapiError = handler.brapiRepaginateRequestResponse(
                 self.api.brapi, "variants", params=params)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
@@ -62,11 +62,11 @@ parserId.add_argument("Authorization", type=str, required=False,
 class GenotypingVariantsId(Resource):
 
     @namespace.expect(parserId, validate=True)
-    @brapi.authorization
+    @handler.authorization
     def get(self,variantDbId):
-        args = parser.parse_args(strict=True)
+        parser.parse_args(strict=True)
         try:
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiIdRequestResponse(
+            brapiResponse,brapiStatus,brapiError = handler.brapiIdRequestResponse(
                 self.api.brapi, "variants", "variantDbId", variantDbId)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")

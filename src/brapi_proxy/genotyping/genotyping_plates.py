@@ -1,43 +1,31 @@
-from flask import Response, abort, request
-from flask_restx import Resource, reqparse
+from flask import Response
+from flask_restx import Resource
 import json
 
-from service import brapi
-from service.core import ns_api_core as namespace
-
+from .. import handler
+from . import ns_api_genotyping as namespace
 
 parser = namespace.parser()
-parser.add_argument("studyType", type=str, required=False,
-                    help="Filter based on study type unique identifier")
-parser.add_argument("locationDbId", type=str, required=False,
-                    help="Filter by location")
-parser.add_argument("seasonDbId", type=str, required=False,
-                    help="Filter by season or year")
-parser.add_argument("studyCode", type=str, required=False,
-                    help="Filter by study code")
-parser.add_argument("studyPUI", type=str, required=False,
-                    help="Filter by study PUI")
-parser.add_argument("observationVariableDbId", type=str, required=False,
-                    help="Filter by observation variable DbId")
-parser.add_argument("active", type=bool, required=False,
-                    help="A flag to indicate if a Study is currently active and ongoing")
-parser.add_argument("sortBy", type=str, required=False,
-                    choices=["studyDbId", "trialDbId", "programDbId", "locationDbId", 
-                             "seasonDbId", "studyType", "studyName", "studyLocation", "programName"],
-                    help="Name of the field to sort by.")
-parser.add_argument("sortOrder", type=str, required=False,
-                    choices=["asc", "ASC", "desc", "DESC"],
-                    help="Sort order direction. Ascending/Descending.")
+parser.add_argument("sampleDbId", type=str, required=False,
+                    help="The unique identifier for a `Sample`")
+parser.add_argument("sampleName", type=str, required=False,
+                    help="The human readable name of the `Sample`")
+parser.add_argument("sampleGroupDbId", type=str, required=False,
+                    help="The unique identifier for a group of related `Samples`")
+parser.add_argument("observationUnitDbId", type=str, required=False,
+                    help="The ID which uniquely identifies an `ObservationUnit`")
+parser.add_argument("plateDbId", type=str, required=False,
+                    help="The ID which uniquely identifies a `Plate` of `Sample`")
+parser.add_argument("plateName", type=str, required=False,
+                    help="The human readable name of a `Plate` of `Sample`")
 parser.add_argument("commonCropName", type=str, required=False,
-                    help="he BrAPI Common Crop Name is the simple, generalized, widely accepted name of the organism being researched. It is most often used in multi-crop systems where digital resources need to be divided at a high level. Things like 'Maize', 'Wheat', and 'Rice' are examples of common crop names.\n\nUse this parameter to only return results associated with the given crop. \n\nUse `GET /commoncropnames` to find the list of available crops on a server.")
+                    help="The BrAPI Common Crop Name is the simple, generalized, widely accepted name of the organism being researched. It is most often used in multi-crop systems where digital resources need to be divided at a high level. Things like 'Maize', 'Wheat', and 'Rice' are examples of common crop names.\n\nUse this parameter to only return results associated with the given crop. \n\nUse `GET /commoncropnames` to find the list of available crops on a server.")
 parser.add_argument("programDbId", type=str, required=False,
                     help="Use this parameter to only return results associated with the given `Program` unique identifier. \n<br/>Use `GET /programs` to find the list of available `Programs` on a server.")
 parser.add_argument("trialDbId", type=str, required=False,
                     help="Use this parameter to only return results associated with the given `Trial` unique identifier. \n<br/>Use `GET /trials` to find the list of available `Trials` on a server.")
 parser.add_argument("studyDbId", type=str, required=False,
                     help="Use this parameter to only return results associated with the given `Study` unique identifier. \n<br/>Use `GET /studies` to find the list of available `Studies` on a server.")
-parser.add_argument("studyName", type=str, required=False,
-                    help="Use this parameter to only return results associated with the given `Study` by its human readable name. \n<br/>Use `GET /studies` to find the list of available `Studies` on a server.")
 parser.add_argument("germplasmDbId", type=str, required=False,
                     help="Use this parameter to only return results associated with the given `Germplasm` unique identifier. \n<br/>Use `GET /germplasm` to find the list of available `Germplasm` on a server.")
 parser.add_argument("externalReferenceID", type=str, required=False,
@@ -54,12 +42,10 @@ parser.add_argument("Authorization", type=str, required=False,
         help="HTTP HEADER - Token used for Authorization<br>**Bearer {token_string}**", 
         location="headers")
 
-#problem: sorting not working for multiple endpoints
-
-class CoreStudies(Resource):
+class GenotypingPlates(Resource):
 
     @namespace.expect(parser, validate=True)
-    @brapi.authorization
+    @handler.authorization
     def get(self):
         args = parser.parse_args(strict=True)
         try:            
@@ -71,8 +57,8 @@ class CoreStudies(Resource):
                 if not key in ["page","pageSize","Authorization"]:
                     if not value is None:
                         params[key] = value
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiRepaginateRequestResponse(
-                self.api.brapi, "studies", params=params)
+            brapiResponse,brapiStatus,brapiError = handler.brapiRepaginateRequestResponse(
+                self.api.brapi, "plates", params=params)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
             else:
@@ -90,15 +76,15 @@ parserId.add_argument("Authorization", type=str, required=False,
         help="HTTP HEADER - Token used for Authorization<br>**Bearer {token_string}**", 
         location="headers")
             
-class CoreStudiesId(Resource):
+class GenotypingPlatesId(Resource):
 
     @namespace.expect(parserId, validate=True)
-    @brapi.authorization
-    def get(self,studyDbId):
-        args = parser.parse_args(strict=True)
+    @handler.authorization
+    def get(self,plateDbId):
+        parser.parse_args(strict=True)
         try:
-            brapiResponse,brapiStatus,brapiError = brapi.BrAPI._brapiIdRequestResponse(
-                self.api.brapi, "studies", "studyDbId", studyDbId)
+            brapiResponse,brapiStatus,brapiError = handler.brapiIdRequestResponse(
+                self.api.brapi, "plates", "plateDbId", plateDbId)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
             else:
