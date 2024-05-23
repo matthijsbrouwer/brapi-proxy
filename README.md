@@ -5,9 +5,16 @@ A BRAPI server instance that functions as a proxy for endpoints from existing BR
 
 ## Installation
 
-```
-pip install brapi_proxy
-```
+- **Step 1: Install BrAPI Proxy**
+  To install the BRAPI Proxy, run the following command:
+  ```sh
+  pip install brapi_proxy
+  ```
+- **Step 2: Test the Installation (Optional)**
+  To ensure that the installation was successful, you can run the BRAPI Proxy in demo mode with the following command:
+  ```sh
+  brapi_proxy --demo
+  ```
 
 ### Usage
 
