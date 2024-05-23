@@ -8,6 +8,8 @@ import time
 from multiprocessing import Process,get_start_method
 from flask import Flask, Blueprint
 from flask_restx import Api
+from flask_restx.apidoc import apidoc
+
 from waitress import serve
 
 from . import handler
@@ -77,6 +79,7 @@ class BrAPI:
                   authorizations=authorizations, security="apikey",
                   description=api_description, version=self.version)
         #config
+        apidoc.static_url_path = os.path.join(server_location,"swaggerui")
         api.config = self.config
         api.brapi = {
             "namespaces": {},
