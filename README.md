@@ -3,11 +3,11 @@
 
 A BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services.
 
-- ** Step 1: Create Configuration File **
+- **Step 1: Create Configuration File**
   - Create a file named config.ini.
   - Populate this file with the necessary configuration settings.
 
-- ** Step 2: Start the Service **
+- **Step 2: Start the Service**
   - Start the service by running the command:
     ``` sh
     brapi_proxy
@@ -19,7 +19,12 @@ A BRAPI server instance that functions as a proxy for endpoints from existing BR
     ```
 
 
-### Supported
+### Currently Supported
+
+**BrAPI Versions**
+- version 2.1
+
+**Endpoints**
 
 - BrAPI-Core
   - /commoncropnames
