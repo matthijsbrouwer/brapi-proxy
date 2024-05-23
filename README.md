@@ -3,27 +3,11 @@
 
 A BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services.
 
-```
-usage: brapi_proxy [-h] [--config [CONFIG]] [--demo]
-
-Start a BRAPI server instance that functions as a proxy for endpoints from existing BRAPI services.
-
-options:
-  -h, --help         show this help message and exit
-  --config [CONFIG]  alternative location of configuration file
-  --demo             start a demonstration service from a configuration based on the BrAPI Test
-                     Server
-```
-
-
-## Configuration
-
-
-- Step 1: Create Configuration File
+- ** Step 1: Create Configuration File **
   - Create a file named config.ini.
   - Populate this file with the necessary configuration settings.
 
-- Step 2: Start the Service
+- ** Step 2: Start the Service **
   - Start the service by running the command:
     ``` sh
     brapi_proxy
