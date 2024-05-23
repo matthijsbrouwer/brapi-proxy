@@ -1,7 +1,7 @@
 # BrAPI proxy solution
 
 
-A BrAPI server instance that functions as a proxy for endpoints from existing BrAPI services.
+A [BrAPI](https://brapi.org/) server instance that functions as a proxy for endpoints from existing BrAPI services.
 
 ## Installation
 
