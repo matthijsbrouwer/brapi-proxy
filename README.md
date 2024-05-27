@@ -44,24 +44,34 @@ A [BrAPI](https://brapi.org/) server instance that functions as a proxy to merge
 
 - BrAPI-Core
   - /commoncropnames
+  - /lists
+  - /lists/{listDbId}
+  - /locations
+  - /locations/{locationDbId}
+  - /people
+  - /people/{personDbId}
+  - /programs
+  - /programs/{programDbId}
   - /studies
   - /studies/{studyDbId}
+  - /trials
+  - /trials/{trialDbId}
 - BrAPI-Genotyping
+  - /allelematrix
   - /callsets
   - /callsets/{callSetDbId}
-  - /variants
-  - /variants/{variantDbId}
-  - /variantsets
-  - /variantsets/{variantSetDbId}
   - /plates
   - /plates/{plateDbId}
-  - /samples
-  - /samples/{sampleDbId}
   - /references
   - /references/{referenceDbId}
   - /referencesets
   - /referencesets/{referenceSetDbId}
-  - /allelematrix
+  - /samples
+  - /samples/{sampleDbId}
+  - /variants
+  - /variants/{variantDbId}
+  - /variantsets
+  - /variantsets/{variantSetDbId}
   
 ### ToDo
 

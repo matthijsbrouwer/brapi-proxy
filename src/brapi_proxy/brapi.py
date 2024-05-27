@@ -16,7 +16,9 @@ from . import handler
 from .core import calls_api_core, ns_api_core
 from .genotyping import calls_api_genotyping, ns_api_genotyping
 
-supportedCalls = list(calls_api_core.keys()) + list(calls_api_genotyping.keys())
+supportedCalls = {}
+for key,value in calls_api_core.items(): supportedCalls[key] = (value[0],value[1],value[2])
+for key,value in calls_api_genotyping.items(): supportedCalls[key] = (value[0],value[1],value[2])
 
 class BrAPI:
     """Main BrAPI class"""
@@ -53,6 +55,7 @@ class BrAPI:
                 process_api.join()
             except Exception as e:
                 self.logger.error("error: %s",str(e))
+            break
 
     def process_api_messages(self):
         """
@@ -82,11 +85,10 @@ class BrAPI:
         apidoc.static_url_path = os.path.join(server_location,"swaggerui")
         api.config = self.config
         api.brapi = {
-            "namespaces": {},
             "servers": {},
-            "calls": {},
+            "calls": {"serverinfo":{}},
             "authorization": {},
-            "supportedCalls": supportedCalls,
+            "identifiers": {call : value[0] for call,value in supportedCalls.items()},
             "version": self.version
         }
         #get configuration
@@ -107,7 +109,7 @@ class BrAPI:
                     if key.startswith("prefix."):
                         api.brapi["servers"][server_name]["prefixes"][key[7:]] = str(
                             self.config.get(server_section,key))
-                serverinfo,_,_ = handler.brapiRequest(
+                serverinfo,_,_ = handler.brapiGetRequest(
                     api.brapi["servers"][server_name],"serverinfo")
                 if not serverinfo:
                     self.logger.error("server %s unreachable",server_name)
@@ -116,59 +118,71 @@ class BrAPI:
                 if self.config.has_option(server_section,"calls"):
                     calls = self.config.get(server_section,"calls").split(",")
                     server_calls = serverinfo.get("result",{}).get("calls",[])
+                    #get available method/services with the right version and contentType
+                    availableServerCalls = set()
+                    for server_call in server_calls:
+                        if (
+                            "application/json" in server_call.get("contentTypes",[])
+                            and
+                            "application/json" in server_call.get("dataTypes",[])
+                            and
+                            self.version in server_call.get("versions",[])
+                        ) :
+                            for method in server_call.get("methods",[]):
+                                availableServerCalls.add((str(method).lower(),server_call.get("service")))
                     for call in calls:
                         if not call in supportedCalls:
                             self.logger.warning(
                                 "call %s for %s not supported by proxy",call,server_name)
+                        elif not availableServerCalls.issuperset(supportedCalls[call][1]):
+                            self.logger.warning(
+                                "call %s not supported by %s",call,server_name)
                         else:
-                            call_found_for_server = False
+                            if not call in api.brapi["calls"]:
+                                api.brapi["calls"][call] = {}
+                            if not server_name in api.brapi["calls"][call]:
+                                api.brapi["calls"][call][server_name] = []
                             for server_call in server_calls:
-                                if call==server_call["service"]:
-                                    api.brapi["servers"][server_name]["calls"].append(call)
-                                    if not call in api.brapi["calls"]:
-                                        api.brapi["calls"][call] = []
-                                    if not "application/json" in server_call.get(
-                                        "contentTypes",[]):
-                                        self.logger.error(
-                                            "contentType application/json not supported "+
-                                            "for %s by %s",call,server_name)
-                                    elif not "application/json" in server_call.get(
-                                        "dataTypes",[]):
-                                        self.logger.error(
-                                            "dataType application/json not supported "+
-                                            "for %s by %s",call,server_name)
-                                    elif not self.version in server_call.get(
-                                        "versions",[]):
-                                        self.logger.error(
-                                            "version %s not supported "+
-                                            "for %s by %s",self.version,call,server_name)
-                                    else:
-                                        api.brapi["calls"][call].append(
-                                            {"server": server_name, "info": server_call})
-                                        call_found_for_server = True
-                            #continue but log error if call not found
-                            if not call_found_for_server:
-                                self.logger.error("call %s for %s not available",
-                                                  call,server_name)
+                                for method in server_call["methods"]:
+                                    callKey = (method.lower(),server_call["service"])
+                                    if callKey in supportedCalls[call][1] or callKey in supportedCalls[call][2]:
+                                        for method in server_call.get("methods"):
+                                            entry = (method.lower(),server_call.get("service"))
+                                            if entry in supportedCalls[call][1] or entry in supportedCalls[call][2]:
+                                                api.brapi["calls"][call][server_name].append(entry)
                 self.logger.debug("checked configuration server %s",server_name)
+        
         #always provide core namespace
         api.add_namespace(ns_api_core)
         core_calls = set(calls_api_core.keys()).intersection(api.brapi["calls"])
         core_calls.add("serverinfo")
         for call in core_calls:
-            for resource in calls_api_core[call]:
-                ns_api_core.add_resource(resource[0], resource[1])
+            for resource in calls_api_core[call][3]:
+                servers = list(api.brapi["calls"][call].keys())
+                if len(servers)>0:
+                    shared = set.intersection(*[set([tuple(entry) for entry in item]) for item in api.brapi["calls"][call].values()])
+                else:
+                    shared = set()
+                methods = resource[0]._methods(shared,servers) if callable(getattr(resource[0], "_methods", None)) else ["get"]
+                ns_api_core.add_resource(resource[0], resource[1], methods=methods)
         #genotyping namespace
         genotyping_calls = set(calls_api_genotyping.keys()).intersection(api.brapi["calls"])
         if len(genotyping_calls)>0:
             api.add_namespace(ns_api_genotyping)
             for call in genotyping_calls:
-                for resource in calls_api_genotyping[call]:
-                    ns_api_genotyping.add_resource(resource[0], resource[1])
+                servers = list(api.brapi["calls"][call].keys())
+                shared = set.intersection(*[set([tuple(entry) for entry in item]) for item in api.brapi["calls"][call].values()])
+                if len(servers)>0:
+                    shared = set.intersection(*[set([tuple(entry) for entry in item]) for item in api.brapi["calls"][call].values()])
+                else:
+                    shared = set()
+                for resource in calls_api_genotyping[call][3]:
+                    methods = resource[0]._methods(shared,servers) if callable(getattr(resource[0], "_methods", None)) else ["get"]
+                    ns_api_genotyping.add_resource(resource[0], resource[1], methods=methods)
         #register blueprint
         app.register_blueprint(blueprint)
         app.config.SWAGGER_UI_DOC_EXPANSION = "list"
-
+        
         #--- start webserver ---
         server_host = self.config.get("brapi","host", fallback="0.0.0.0")
         server_port = self.config.get("brapi","port", fallback="8080")

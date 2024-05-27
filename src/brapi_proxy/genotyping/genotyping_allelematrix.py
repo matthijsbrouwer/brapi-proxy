@@ -70,7 +70,7 @@ class GenotypingAllelematrix(Resource):
             args["sepUnphased"] = args["sepUnphased"] if not args["sepUnphased"] is None else "/"
             params = {"dimensionVariantPage": dimensionVariantPage, 
                       "dimensionVariantPageSize": dimensionVariantPageSize,
-                      "dimensionCallSetPage": dimensionCallSetPage, 
+                      "dimensionCallSetPage": dimensionCallSetPage,
                       "dimensionCallSetPageSize": dimensionCallSetPageSize}
             for key,value in args.items():
                 if not key in ["dimensionVariantPage","dimensionVariantPageSize",
@@ -92,13 +92,13 @@ class GenotypingAllelematrix(Resource):
         
 logger = logging.getLogger("brapi.handler")
 
-def _brapiRepaginateAllelematrixServerRequest(server, serverParams, supportedCalls,
+def _brapiRepaginateAllelematrixServerRequest(server, serverParams, identifiers,
                                                 subStartVariants, subEndVariants, 
                                                 subStartCallSets, subEndCallSets):
     additionalVariantsRequest = False
     additionalCallSetsRequest = False
     #get page
-    itemResponse,itemStatus,itemError = handler.brapiRequest(server,"allelematrix",params=serverParams)
+    itemResponse,itemStatus,itemError = handler.brapiGetRequest(server,"allelematrix",params=serverParams)
     if not itemResponse:
         return None, 500, "invalid response ({}) from {}: {}".format(
             itemStatus,server["name"],str(itemError))
@@ -119,14 +119,14 @@ def _brapiRepaginateAllelematrixServerRequest(server, serverParams, supportedCal
             subCallSetsPageSize = int(entry.get("pageSize",subCallSetsPageSize))
     subVariantDbIds = itemResponse.get("result",{}).get("variantDbIds",[]) 
     subVariantDbIds = handler.prefixDataEntry({"variantDbIds": subVariantDbIds},
-                                   server["prefixes"],supportedCalls)["variantDbIds"]
+                                   server["prefixes"],identifiers)["variantDbIds"]
     subVariantSetDbIds = itemResponse.get("result",{}).get("variantSetDbIds",[])
     subVariantSetDbIds = [] if not subVariantSetDbIds else subVariantSetDbIds
     subVariantSetDbIds = handler.prefixDataEntry({"variantSetDbIds": subVariantSetDbIds},
-                                   server["prefixes"],supportedCalls)["variantSetDbIds"]
+                                   server["prefixes"],identifiers)["variantSetDbIds"]
     subCallSetDbIds = itemResponse.get("result",{}).get("callSetDbIds",[])
     subCallSetDbIds = handler.prefixDataEntry({"callSetDbIds": subCallSetDbIds},
-                                   server["prefixes"],supportedCalls)["callSetDbIds"]
+                                   server["prefixes"],identifiers)["callSetDbIds"]
     subDataMatrices = itemResponse.get("result",{}).get("dataMatrices",[]) 
     #check variants
     logger.debug("server {} for allematrix has {} variants, get {} on page {} with size {}".format(
@@ -261,11 +261,11 @@ def _mergeAllematrixDataMatrices(dataMatrices,newDataMatrices,
         dataMatrices[j]["dataMatrix"] = dataMatrix
     return dataMatrices
     
-def _brapiRepaginateAllelematrixRequestResponse(apiBrapi, params):
+def _brapiRepaginateAllelematrixRequestResponse(brapi, params):
     #get servers
     servers = []
-    for item in apiBrapi["calls"]["allelematrix"]:
-        servers.append(apiBrapi["servers"].get(item["server"],{}))
+    for server in brapi["calls"]["allelematrix"]:
+        servers.append(brapi["servers"].get(server,{}))
     #initialise result
     result = {
         "callSetDbIds": [],
@@ -311,7 +311,7 @@ def _brapiRepaginateAllelematrixRequestResponse(apiBrapi, params):
             subStartCallSets = startCallSets - totalCountCallSets
             subEndCallSets = endCallSets - totalCountCallSets
             serverParams = handler.prefixRewriteParams(
-                params,server["prefixes"],apiBrapi["supportedCalls"])
+                params,server["prefixes"],brapi["identifiers"])
             if not serverParams is None:
                 #recompute page and pageSize
                 serverParams["dimensionVariantPage"] = max(0,math.floor(subStartVariants/params["dimensionVariantPageSize"]))
@@ -325,7 +325,7 @@ def _brapiRepaginateAllelematrixRequestResponse(apiBrapi, params):
                     serverParams["preview"] = True
                 #get server response
                 serverResponse = _brapiRepaginateAllelematrixServerRequest(
-                                       server, serverParams, apiBrapi["supportedCalls"],
+                                       server, serverParams, brapi["identifiers"],
                                        subStartVariants, subEndVariants, subStartCallSets, subEndCallSets)
                 variantsStart = len(variantDbIds)
                 variantsEnd = variantsStart + len(serverResponse["variantDbIds"])
@@ -346,7 +346,7 @@ def _brapiRepaginateAllelematrixRequestResponse(apiBrapi, params):
                         subStartVariants1 = subStartVariants+len(serverResponse["variantDbIds"])
                         serverParams1["dimensionVariantPage"]+=1
                         newServerResponse1 = _brapiRepaginateAllelematrixServerRequest(
-                                               server, serverParams1, apiBrapi["supportedCalls"],
+                                               server, serverParams1, brapi["identifiers"],
                                                subStartVariants1, subEndVariants, subStartCallSets, subEndCallSets)
                         variantDbIds = variantDbIds + newServerResponse1["variantDbIds"]
                         variantSetDbIds = list(set(variantSetDbIds + newServerResponse1["variantSetDbIds"]))
@@ -361,7 +361,7 @@ def _brapiRepaginateAllelematrixRequestResponse(apiBrapi, params):
                         subStartCallSets2 = subStartCallSets+len(serverResponse["callSetDbIds"])
                         serverParams2["dimensionCallSetPage"]+=1
                         newServerResponse2 = _brapiRepaginateAllelematrixServerRequest(
-                                               server, serverParams2, apiBrapi["supportedCalls"],
+                                               server, serverParams2, brapi["identifiers"],
                                                subStartVariants, subEndVariants, subStartCallSets2, subEndCallSets)
                         callSetDbIds = callSetDbIds + newServerResponse2["callSetDbIds"]
                         callSetsStart2 = callSetsStart + len(serverResponse["callSetDbIds"])
@@ -377,7 +377,7 @@ def _brapiRepaginateAllelematrixRequestResponse(apiBrapi, params):
                         serverParams3["dimensionVariantPage"]+=1
                         serverParams3["dimensionCallSetPage"]+=1
                         newServerResponse3 = _brapiRepaginateAllelematrixServerRequest(
-                                               server, serverParams3, apiBrapi["supportedCalls"],
+                                               server, serverParams3, brapi["identifiers"],
                                                subStartVariants3, subEndVariants, subStartCallSets3, subEndCallSets)
                         variantsStart3 = variantsStart + len(serverResponse["variantDbIds"])
                         variantsEnd3 = variantsStart3 + len(newServerResponse3["variantDbIds"])

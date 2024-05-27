@@ -30,20 +30,14 @@ def authorization(brapi_call):
     return decorated
 
 
-def prefixDataEntry(data,prefixes,supportedCalls):
+def prefixDataEntry(data,prefixes,identifiers):
     for key,value in prefixes.items():
-        if value and key in supportedCalls:
-            if key.endswith("ies"):
-                idKey = "{}yDbId".format(key[:-3])
-            else:
-                idKey = "{}DbId".format(key[:-1])
+        if value and key in identifiers and not identifiers[key] is None:
+            idKey = identifiers[key]
+            idsKey = "{}s".format(idKey)
             if idKey in data and not data[idKey] is None:
                 if isinstance(data[idKey],str):
                     data[idKey] = "{}{}".format(value,data[idKey])
-            if key.endswith("ies"):
-                idsKey = "{}yDbIds".format(key[:-3])
-            else:
-                idsKey = "{}DbIds".format(key[:-1])
             if idsKey in data and not data[idsKey] is None:
                 if isinstance(data[idsKey],str):
                     data[idsKey] = "{}{}".format(value,data[idsKey])
@@ -51,14 +45,11 @@ def prefixDataEntry(data,prefixes,supportedCalls):
                     data[idsKey] = ["{}{}".format(value,entry) for entry in data[idsKey]]
     return data
 
-def prefixRewriteParams(params,prefixes,supportedCalls):
+def prefixRewriteParams(params,prefixes,identifiers):
     newParams = params.copy()
     for key,value in prefixes.items():
-        if value and key in supportedCalls:
-            if key.endswith("ies"):
-                idKey = "{}yDbId".format(key[:-3])
-            else:
-                idKey = "{}DbId".format(key[:-1])
+        if value and key in identifiers and not identifiers[key] is None:
+            idKey = identifiers[key]
             if idKey in newParams and not newParams[idKey] is None:
                 if isinstance(newParams[idKey],str):
                     if newParams[idKey].startswith(value):
@@ -74,32 +65,62 @@ def brapiResponse(result):
     response["result"] = result
     return response
 
-def brapiRequest(server,call,method="get",**args):
+def brapiGetRequest(server,call,**args):
     try:
-        if method=="get":
-            params = args.get("params",{})
-            headers = {"Accept": "application/json"}
-            url = "{}/{}".format(server["url"],call)
-            response = requests.get(url, params=params, headers=headers)
-            try:
-                if response.ok:
-                    return response.json(), response.status_code, None
-                else:
-                    return None, response.status_code, response.text
-            except:
-                return None, 500, response.text
-        else:
-            return None, 501, "unsupported method {} ".format(method)
+        params = args.get("params",{})
+        headers = {"Accept": "application/json"}
+        url = "{}/{}".format(server["url"],call)
+        response = requests.get(url, params=params, headers=headers)
+        try:
+            if response.ok:
+                return response.json(), response.status_code, None
+            else:
+                return None, response.status_code, response.text
+        except:
+            return None, 500, response.text
     except Exception as e:
         return None, 500, "error: {}".format(str(e))
 
+def brapiPostRequest(server,call,payload):
+    try:
+        headers = {"Accept": "application/json"}
+        url = "{}/{}".format(server["url"],call)
+        response = requests.post(url, data=payload, headers=headers)
+        try:
+            if response.ok:
+                return response.json(), response.status_code, None
+            else:
+                return None, response.status_code, response.text
+        except:
+            return None, 500, response.text
+    except Exception as e:
+        return None, 500, "error: {}".format(str(e))
+
+def brapiPostRequestResponse(brapi, call, payload):
+    #get servers
+    servers = []
+    for server in brapi["calls"][call]:
+        servers.append(brapi["servers"].get(server,{}))
+    #construct response
+    response = {}
+    response["@context"] = ["https://brapi.org/jsonld/context/metadata.jsonld"]
+    response["metadata"] = {}
+    for server in servers:
+        try:
+            if ("post", call) in brapi["calls"][call][server["name"]]:
+                itemResponse,itemStatus,itemError = brapiPostRequest(server,serverCall,payload)
+        except Exception as e:
+                return None, 500, "problem processing response from {}: {}".format(
+                    server["name"],str(e))
+    return None, 501, "unsupported post to {}".format(call)
 
 def brapiIdRequestResponse(brapi, call, name, id, method="get", **args):
     #get servers
     servers = []
-    for item in brapi["calls"][call]:
-        servers.append(brapi["servers"].get(item["server"],{}))
+    for server in brapi["calls"][call]:
+        servers.append(brapi["servers"].get(server,{}))
     #handle request
+    callById="{}/{{{}}}".format(call,name)
     if method=="get":
         #construct response
         response = {}
@@ -109,37 +130,48 @@ def brapiIdRequestResponse(brapi, call, name, id, method="get", **args):
             try:
                 serverParams = {}
                 serverParams[name] = id
-                serverParams = prefixRewriteParams(serverParams,server["prefixes"],
-                                                   brapi["supportedCalls"])
+                serverParams = prefixRewriteParams(serverParams,server["prefixes"], brapi["identifiers"])
                 if not serverParams is None:
-                    itemResponse,itemStatus,itemError = brapiRequest(
-                        server,call,params=serverParams)
-                    if itemResponse:
-                        try:
-                            data = itemResponse.get("result").get("data")
-                            data = [prefixDataEntry(
-                                entry,server["prefixes"],
-                                brapi["supportedCalls"]) for entry in data]
-                            if len(data)==1:
-                                if name in data[0]:
-                                    if data[0][name]==id:
-                                        response["result"] = data[0]
-                                        return response, 200, None
+                    if (method, callById) in brapi["calls"][call][server["name"]]:
+                        serverCall = "{}/{}".format(call,serverParams[name])
+                        itemResponse,itemStatus,itemError = brapiGetRequest(server,serverCall)
+                        if itemResponse:
+                            try:
+                                data = itemResponse.get("result")
+                                data = prefixDataEntry(data,server["prefixes"],brapi["identifiers"])
+                                response["result"] = data
+                                return response, 200, None
+                            except:
+                                logger.warning("unexpected response from {}".format(server["name"]))
+                    elif (method, call) in brapi["calls"][call][server["name"]]:
+                        itemResponse,itemStatus,itemError = brapiGetRequest(
+                            server,call,params=serverParams)
+                        if itemResponse:
+                            try:
+                                data = itemResponse.get("result").get("data")
+                                data = [prefixDataEntry(
+                                    entry,server["prefixes"],
+                                    brapi["identifiers"]) for entry in data]
+                                if len(data)==1:
+                                    if name in data[0]:
+                                        if data[0][name]==id:
+                                            response["result"] = data[0]
+                                            return response, 200, None
+                                        else:
+                                            logger.warning("unexpected response with "+
+                                                           "{}: {} from {}".format(
+                                                name,data[0][name],server["name"]))
                                     else:
-                                        logger.warning("unexpected response with "+
-                                                       "{}: {} from {}".format(
-                                            name,data[0][name],server["name"]))
-                                else:
-                                    logger.warning("unexpected response without "+
-                                                   "{} from {}".format(
-                                            name,server["name"]))
-                            elif len(data)>1:
-                                logger.warning("unexpected multiple ({}) ".format(len(data))+
-                                               "entries in response from {}".format(
-                                                   server["name"]))
-                        except:
-                            logger.warning("unexpected response from {}".format(
-                                server["name"]))
+                                        logger.warning("unexpected response without "+
+                                                       "{} from {}".format(
+                                                name,server["name"]))
+                                elif len(data)>1:
+                                    logger.warning("unexpected multiple ({}) ".format(len(data))+
+                                                   "entries in response from {}".format(
+                                                       server["name"]))
+                            except:
+                                logger.warning("unexpected response from {}".format(
+                                    server["name"]))
             except Exception as e:
                 return None, 500, "problem processing response from {}: {}".format(
                     server["name"],str(e))
@@ -151,11 +183,17 @@ def brapiIdRequestResponse(brapi, call, name, id, method="get", **args):
 def brapiRepaginateRequestResponse(brapi, call, method="get", **args):
     #get servers
     servers = []
-    for item in brapi["calls"][call]:
-        servers.append(brapi["servers"].get(item["server"],{}))
+    for server in brapi["calls"][call]:
+        servers.append(brapi["servers"].get(server,{}))
     #handle request
     if method=="get":
         params = args.get("params",{})
+        if len(servers)>1:
+            unsupported = args.get("unsupportedForMultipleServerResponse",[])
+            for key in params:
+                if key in unsupported:
+                    return None, 501, "unsupported parameter {}".format(key)
+        #pagination
         page = params.get("page",0)
         pageSize = params.get("pageSize",1000)
         #construct response
@@ -174,14 +212,13 @@ def brapiRepaginateRequestResponse(brapi, call, method="get", **args):
             try:
                 subStart = start - totalCount
                 subEnd = end - totalCount
-                serverParams = prefixRewriteParams(params,server["prefixes"],
-                                                   brapi["supportedCalls"])
+                serverParams = prefixRewriteParams(params,server["prefixes"], brapi["identifiers"])
                 if not serverParams is None:
                     #recompute page and pageSize
                     serverParams["page"] = max(0,math.floor(subStart/pageSize))
                     serverParams["pageSize"] = pageSize
                     #get page
-                    itemResponse,itemStatus,itemError = brapiRequest(
+                    itemResponse,itemStatus,itemError = brapiGetRequest(
                         server,call,params=serverParams)
                     if not itemResponse:
                         return None, 500, "invalid response ({}) from {}: {}".format(
@@ -193,8 +230,7 @@ def brapiRepaginateRequestResponse(brapi, call, method="get", **args):
                     subPageSize = itemResponse.get("metadata",{}).get(
                         "pagination",{}).get("pageSize",1000)
                     subData = itemResponse.get("result",{}).get("data",[])
-                    subData = [prefixDataEntry(entry,server["prefixes"],
-                                               brapi["supportedCalls"])
+                    subData = [prefixDataEntry(entry,server["prefixes"], brapi["identifiers"])
                                for entry in subData]
                     logger.debug("server {} for {} has {} results, ".format(
                         server["name"], call, subTotal)+
@@ -221,7 +257,7 @@ def brapiRepaginateRequestResponse(brapi, call, method="get", **args):
                             if subEnd>(((subPage+1)*subPageSize)-1):
                                 serverParams["page"]+=1
                                 #get next page
-                                itemResponse = brapiRequest(
+                                itemResponse = brapiGetRequest(
                                     server,call,params=serverParams)
                                 if not itemResponse:
                                     return (None, 500,
@@ -259,6 +295,7 @@ def brapiRepaginateRequestResponse(brapi, call, method="get", **args):
                                         len(subData),s1,s2)+
                                         "from {} to {} result".format(
                                             server["name"], call))
+                                    #update data
                                     data = data + subData
                     totalCount += subTotal
             except Exception as e:

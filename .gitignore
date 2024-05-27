@@ -8,3 +8,4 @@ brapi_proxy.egg-info
 /config.ini
 /config_*
 /publish.txt
+/service.py

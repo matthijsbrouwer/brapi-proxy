@@ -7,24 +7,22 @@ from . import ns_api_core as namespace
 
 
 parser = namespace.parser()
-parser.add_argument("studyType", type=str, required=False,
-                    help="Filter based on study type unique identifier")
-parser.add_argument("locationDbId", type=str, required=False,
-                    help="Filter by location")
-parser.add_argument("seasonDbId", type=str, required=False,
-                    help="Filter by season or year")
-parser.add_argument("studyCode", type=str, required=False,
-                    help="Filter by study code")
-parser.add_argument("studyPUI", type=str, required=False,
-                    help="Filter by study PUI")
-parser.add_argument("observationVariableDbId", type=str, required=False,
-                    help="Filter by observation variable DbId")
 parser.add_argument("active", type=bool, required=False,
                     help="A flag to indicate if a Study is currently active and ongoing")
+parser.add_argument("contactDbId", type=str, required=False,
+                    help="Contact entities associated with this trial")
+parser.add_argument("locationDbId", type=str, required=False,
+                    help="Filter by location")
+parser.add_argument("searchDateRangeStart", type=str, required=False,
+                    help="The start of the overlapping search date range. `searchDateRangeStart` must be before `searchDateRangeEnd`.\n\nReturn a Trial entity if any of the following cases are true\n\n- `searchDateRangeStart` is before `trial.endDate` AND `searchDateRangeEnd` is null \n\n- `searchDateRangeStart` is before `trial.endDate` AND `searchDateRangeEnd` is after `trial.startDate`\n\n- `searchDateRangeEnd` is after `trial.startDate` AND `searchDateRangeStart` is null\n\n- `searchDateRangeEnd` is after `trial.startDate` AND `searchDateRangeStart` is before `trial.endDate`")
+parser.add_argument("searchDateRangeEnd", type=str, required=False,
+                    help="The start of the overlapping search date range. `searchDateRangeStart` must be before `searchDateRangeEnd`.\n\nReturn a Trial entity if any of the following cases are true\n\n- `searchDateRangeStart` is before `trial.endDate` AND `searchDateRangeEnd` is null \n\n- `searchDateRangeStart` is before `trial.endDate` AND `searchDateRangeEnd` is after `trial.startDate`\n\n- `searchDateRangeEnd` is after `trial.startDate` AND `searchDateRangeStart` is null\n\n- `searchDateRangeEnd` is after `trial.startDate` AND `searchDateRangeStart` is before `trial.endDate`")
+parser.add_argument("trialPUI", type=str, required=False,
+                    help="Filter by trial PUI")
 parser.add_argument("sortBy", type=str, required=False,
-                    choices=["studyDbId", "trialDbId", "programDbId", "locationDbId", 
-                             "seasonDbId", "studyType", "studyName", "studyLocation", "programName"],
-                    help="Name of the field to sort by.")
+                    choices=["trialDbId", "trialName", "programDbId", "programName", "locationDbId", 
+                             "startDate", "endDate"],
+                    help="Sort order. Name of the field to sort by.")
 parser.add_argument("sortOrder", type=str, required=False,
                     choices=["asc", "ASC", "desc", "DESC"],
                     help="Sort order direction. Ascending/Descending.")
@@ -34,12 +32,10 @@ parser.add_argument("programDbId", type=str, required=False,
                     help="Use this parameter to only return results associated with the given `Program` unique identifier. \n<br/>Use `GET /programs` to find the list of available `Programs` on a server.")
 parser.add_argument("trialDbId", type=str, required=False,
                     help="Use this parameter to only return results associated with the given `Trial` unique identifier. \n<br/>Use `GET /trials` to find the list of available `Trials` on a server.")
+parser.add_argument("trialName", type=str, required=False,
+                    help="Use this parameter to only return results associated with the given `Trial` by its human readable name. \n<br/>Use `GET /trials` to find the list of available `Trials` on a server.")
 parser.add_argument("studyDbId", type=str, required=False,
                     help="Use this parameter to only return results associated with the given `Study` unique identifier. \n<br/>Use `GET /studies` to find the list of available `Studies` on a server.")
-parser.add_argument("studyName", type=str, required=False,
-                    help="Use this parameter to only return results associated with the given `Study` by its human readable name. \n<br/>Use `GET /studies` to find the list of available `Studies` on a server.")
-parser.add_argument("germplasmDbId", type=str, required=False,
-                    help="Use this parameter to only return results associated with the given `Germplasm` unique identifier. \n<br/>Use `GET /germplasm` to find the list of available `Germplasm` on a server.")
 parser.add_argument("externalReferenceID", type=str, required=False,
                     help="**Deprecated in v2.1** Please use `externalReferenceId`. Github issue number #460 \n<br>An external reference ID. Could be a simple string or a URI. (use with `externalReferenceSource` parameter)")
 parser.add_argument("externalReferenceId", type=str, required=False,
@@ -54,7 +50,7 @@ parser.add_argument("Authorization", type=str, required=False,
         help="HTTP HEADER - Token used for Authorization<br>**Bearer {token_string}**", 
         location="headers")
 
-class CoreStudies(Resource):
+class CoreTrials(Resource):
 
     @namespace.expect(parser, validate=True)
     @handler.authorization
@@ -70,7 +66,7 @@ class CoreStudies(Resource):
                     if not value is None:
                         params[key] = value
             brapiResponse,brapiStatus,brapiError = handler.brapiRepaginateRequestResponse(
-                self.api.brapi, "studies", params=params, unsupportedForMultipleServerResponse=["sortBy","sortOrder"])
+                self.api.brapi, "trials", params=params, unsupportedForMultipleServerResponse=["sortBy","sortOrder"])
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
             else:
@@ -88,15 +84,15 @@ parserId.add_argument("Authorization", type=str, required=False,
         help="HTTP HEADER - Token used for Authorization<br>**Bearer {token_string}**", 
         location="headers")
             
-class CoreStudiesId(Resource):
+class CoreTrialsId(Resource):
 
     @namespace.expect(parserId, validate=True)
     @handler.authorization
-    def get(self,studyDbId):
+    def get(self,trialDbId):
         parser.parse_args(strict=True)
         try:
             brapiResponse,brapiStatus,brapiError = handler.brapiIdRequestResponse(
-                self.api.brapi, "studies", "studyDbId", studyDbId)
+                self.api.brapi, "trials", "trialDbId", trialDbId)
             if brapiResponse:
                 return Response(json.dumps(brapiResponse), mimetype="application/json")
             else:
