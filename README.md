@@ -52,6 +52,8 @@ A [BrAPI](https://brapi.org/) server instance that functions as a proxy to merge
   - /people/{personDbId}
   - /programs
   - /programs/{programDbId}
+  - /seasons
+  - /seasons/{seasonDbId}
   - /studies
   - /studies/{studyDbId}
   - /trials
@@ -76,6 +78,7 @@ A [BrAPI](https://brapi.org/) server instance that functions as a proxy to merge
 ### ToDo
 
 - Implement additional endpoints
+- Possibly support other methods (now only get)
 - Enable authentication for underlying servers
   
 ---

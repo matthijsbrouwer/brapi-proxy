@@ -180,131 +180,132 @@ def brapiIdRequestResponse(brapi, call, name, id, method="get", **args):
         return None, 501, "unsupported method {}".format(method)
 
 
-def brapiRepaginateRequestResponse(brapi, call, method="get", **args):
+def brapiRepaginateRequestResponse(brapi, call, **args):
     #get servers
     servers = []
     for server in brapi["calls"][call]:
         servers.append(brapi["servers"].get(server,{}))
     #handle request
-    if method=="get":
-        params = args.get("params",{})
-        if len(servers)>1:
-            unsupported = args.get("unsupportedForMultipleServerResponse",[])
-            for key in params:
-                if key in unsupported:
-                    return None, 501, "unsupported parameter {}".format(key)
-        #pagination
-        page = params.get("page",0)
-        pageSize = params.get("pageSize",1000)
-        #construct response
-        response = {}
-        response["@context"] = ["https://brapi.org/jsonld/context/metadata.jsonld"]
-        response["metadata"] = {}
-        response["metadata"]["pagination"] = {
-            "currentPage": page,
-            "pageSize": pageSize
-        }
-        data = []
-        totalCount = 0
-        start = page*pageSize
-        end = ((page+1)*pageSize) - 1
-        for server in servers:
-            try:
-                subStart = start - totalCount
-                subEnd = end - totalCount
-                serverParams = prefixRewriteParams(params,server["prefixes"], brapi["identifiers"])
-                if not serverParams is None:
-                    #recompute page and pageSize
-                    serverParams["page"] = max(0,math.floor(subStart/pageSize))
-                    serverParams["pageSize"] = pageSize
-                    #get page
-                    itemResponse,itemStatus,itemError = brapiGetRequest(
-                        server,call,params=serverParams)
-                    if not itemResponse:
-                        return None, 500, "invalid response ({}) from {}: {}".format(
-                            itemStatus,server["name"],str(itemError))
-                    subTotal = itemResponse.get("metadata",{}).get(
-                        "pagination",{}).get("totalCount",0)
-                    subPage = itemResponse.get("metadata",{}).get(
-                        "pagination",{}).get("currentPage",0)
-                    subPageSize = itemResponse.get("metadata",{}).get(
-                        "pagination",{}).get("pageSize",1000)
-                    subData = itemResponse.get("result",{}).get("data",[])
-                    subData = [prefixDataEntry(entry,server["prefixes"], brapi["identifiers"])
-                               for entry in subData]
-                    logger.debug("server {} for {} has {} results, ".format(
-                        server["name"], call, subTotal)+
-                        "get {} on page {} with size {}".format(
-                            len(subData), subPage, subPageSize))
-                    if not subPage==serverParams["page"]:
-                        logger.warning("unexpected page: {} instead of {}".format(
-                            subPage,serverParams["page"]))
-                    elif not subPageSize==serverParams["pageSize"]:
-                        logger.warning("unexpected pageSize: {} instead of {}".format(
-                            subPageSize,serverParams["pageSize"]))
-                    elif len(subData)>subPageSize:
-                        logger.warning("unexpected number of results: {} > {}".format(
-                            len(subData),subPageSize))
-                    if (subStart<subTotal) and (subEnd>=0):
-                        s1 = max(0,subStart-(subPage*subPageSize))
-                        s2 = min(subPageSize-1,min(subTotal-1,subEnd)-(subPage*subPageSize))
-                        if s2>=s1:
+    params = args.get("params",{})
+    if len(servers)>1:
+        unsupported = args.get("unsupportedForMultipleServerResponse",[])
+        for key in params:
+            if key in unsupported:
+                return None, 501, "unsupported parameter {}".format(key)
+    #pagination
+    page = params.get("page",0)
+    pageSize = params.get("pageSize",1000)
+    #construct response
+    response = {}
+    response["@context"] = ["https://brapi.org/jsonld/context/metadata.jsonld"]
+    response["metadata"] = {}
+    response["metadata"]["pagination"] = {
+        "currentPage": page,
+        "pageSize": pageSize
+    }
+    data = []
+    totalCount = 0
+    start = page*pageSize
+    end = ((page+1)*pageSize) - 1
+    for server in servers:
+        try:
+            subStart = start - totalCount
+            subEnd = end - totalCount
+            serverParams = prefixRewriteParams(params,server["prefixes"], brapi["identifiers"])
+            if not serverParams is None:
+                #recompute page and pageSize
+                serverParams["page"] = max(0,math.floor(subStart/pageSize))
+                serverParams["pageSize"] = pageSize
+                #get page
+                itemResponse,itemStatus,itemError = brapiGetRequest(
+                    server,call,params=serverParams)
+                if not itemResponse:
+                    return None, 500, "invalid response ({}) from {}: {}".format(
+                        itemStatus,server["name"],str(itemError))
+                subTotal = itemResponse.get("metadata",{}).get(
+                    "pagination",{}).get("totalCount",0)
+                subTotalPages = itemResponse.get("metadata",{}).get(
+                    "pagination",{}).get("totalPages",0)
+                subPage = itemResponse.get("metadata",{}).get(
+                    "pagination",{}).get("currentPage",0)
+                subPageSize = itemResponse.get("metadata",{}).get(
+                    "pagination",{}).get("pageSize",1000)
+                subData = itemResponse.get("result",{}).get("data",[])
+                subData = [prefixDataEntry(entry,server["prefixes"], brapi["identifiers"])
+                           for entry in subData]
+                logger.debug("server {} for {} has {} results, ".format(
+                    server["name"], call, subTotal)+
+                    "get {} on page {} with size {}".format(
+                        len(subData), subPage, subPageSize))
+                if not subPage==serverParams["page"]:
+                    logger.warning("unexpected page: {} instead of {}".format(
+                        subPage,serverParams["page"]))
+                elif not subPageSize==serverParams["pageSize"]:
+                    logger.warning("unexpected pageSize: {} instead of {}".format(
+                        subPageSize,serverParams["pageSize"]))
+                elif len(subData)>subPageSize:
+                    logger.warning("unexpected number of results: {} > {}".format(
+                        len(subData),subPageSize))
+                if (subStart<subTotal) and (subEnd>=0):
+                    s1 = max(0,subStart-(subPage*subPageSize))
+                    s2 = min(subPageSize-1,min(subTotal-1,subEnd)-(subPage*subPageSize))
+                    if s2>=s1:
+                        subData = subData[s1:s2+1]
+                        logger.debug("add {} entries ({} - {}) from {} to {} result".format(
+                            len(subData),s1,s2,server["name"], call))
+                        data = data + subData
+                        #another page necessary
+                        if (subEnd>(((serverParams["page"]+1)*subPageSize)-1)) and (serverParams["page"]+1<subTotalPages):
+                            serverParams["page"]+=1
+                            #get next page
+                            itemResponse,itemStatus,itemError = brapiGetRequest(
+                                server,call,params=serverParams)
+                            if not itemResponse:
+                                return (None, 500,
+                                    "invalid response ({}) from {}: {}".format(
+                                    itemStatus,server["name"],str(itemError)))
+                            subTotal = itemResponse.get("metadata",{}).get(
+                                "pagination",{}).get("totalCount",0)
+                            subTotalPages = itemResponse.get("metadata",{}).get(
+                                "pagination",{}).get("totalPages",0)
+                            subPage = itemResponse.get("metadata",{}).get(
+                                "pagination",{}).get("currentPage",0)
+                            subPageSize = itemResponse.get("metadata",{}).get(
+                                "pagination",{}).get("pageSize",1000)
+                            subData = itemResponse.get("result",{}).get("data",[])
+                            logger.debug("server {} for {} has {} results, ".format(
+                                server["name"], call, subTotal)+
+                                "get {} on page {} with size {}".format(
+                                    len(subData), subPage, subPageSize))
+                            if not subPage==serverParams["page"]:
+                                logger.warning("unexpected page: {} instead of {}".format(
+                                    subPage,serverParams["page"]))
+                            elif not subPageSize==serverParams["pageSize"]:
+                                logger.warning("unexpected pageSize: {} ".format(
+                                    subPageSize)+
+                                    "instead of {}".format(serverParams["pageSize"]))
+                            elif len(subData)>subPageSize:
+                                logger.warning("unexpected number of "+
+                                               "results: {} > {}".format(
+                                    len(subData),subPageSize))
+                            s1 = max(0,subStart-(subPage*subPageSize))
+                            s2 = min(subPageSize-1,
+                                     min(subTotal-1,subEnd)-(subPage*subPageSize))
                             subData = subData[s1:s2+1]
-                            logger.debug("add {} entries ({} - {}) from {} to {} result".format(
-                                len(subData),s1,s2,server["name"], call))
-                            data = data + subData
-                            #another page necessary
-                            if subEnd>(((subPage+1)*subPageSize)-1):
-                                serverParams["page"]+=1
-                                #get next page
-                                itemResponse = brapiGetRequest(
-                                    server,call,params=serverParams)
-                                if not itemResponse:
-                                    return (None, 500,
-                                        "invalid response ({}) from {}: {}".format(
-                                        itemStatus,server["name"],str(itemError)))
-                                subTotal = itemResponse.get("metadata",{}).get(
-                                    "pagination",{}).get("totalCount",0)
-                                subPage = itemResponse.get("metadata",{}).get(
-                                    "pagination",{}).get("currentPage",0)
-                                subPageSize = itemResponse.get("metadata",{}).get(
-                                    "pagination",{}).get("pageSize",1000)
-                                subData = itemResponse.get("result",{}).get("data",[])
-                                logger.debug("server {} for {} has {} results, ".format(
-                                    server["name"], call, subTotal)+
-                                    "get {} on page {} with size {}".format(
-                                        len(subData), subPage, subPageSize))
-                                if not subPage==serverParams["page"]:
-                                    logger.warning("unexpected page: {} instead of {}".format(
-                                        subPage,serverParams["page"]))
-                                elif not subPageSize==serverParams["pageSize"]:
-                                    logger.warning("unexpected pageSize: {} ".format(
-                                        subPageSize)+
-                                        "instead of {}".format(serverParams["pageSize"]))
-                                elif len(subData)>subPageSize:
-                                    logger.warning("unexpected number of "+
-                                                   "results: {} > {}".format(
-                                        len(subData),subPageSize))
-                                s1 = max(0,subStart-(subPage*subPageSize))
-                                s2 = min(subPageSize-1,
-                                         min(subTotal-1,subEnd)-(subPage*subPageSize))
+                            if s2>=s1:
                                 subData = subData[s1:s2+1]
-                                if s2>=s1:
-                                    subData = subData[s1:s2+1]
-                                    logger.debug("add {} entries ({} - {}) ".format(
-                                        len(subData),s1,s2)+
-                                        "from {} to {} result".format(
-                                            server["name"], call))
-                                    #update data
-                                    data = data + subData
-                    totalCount += subTotal
-            except Exception as e:
-                return (None, 500, "problem processing response "+
-                        "from {}: {}".format(server["name"],str(e)))
-        logger.debug("result for {} has in total {} entries".format(call,len(data)))
-        response["result"] = {"data": data}
-        response["metadata"]["pagination"]["totalCount"] = totalCount
-        response["metadata"]["pagination"]["totalPages"] = math.ceil(totalCount/pageSize)
-        return response, 200, None
-    else:
-        return None, 501, "unsupported method {}".format(method)
+                                logger.debug("add {} entries ({} - {}) ".format(
+                                    len(subData),s1,s2)+
+                                    "from {} to {} result".format(
+                                        server["name"], call))
+                                #update data
+                                data = data + subData
+                totalCount += subTotal
+        except Exception as e:
+            return (None, 500, "problem processing response "+
+                    "from {}: {}".format(server["name"],str(e)))
+    logger.debug("result for {} has in total {} entries".format(call,len(data)))
+    response["result"] = {"data": data}
+    response["metadata"]["pagination"]["totalCount"] = totalCount
+    response["metadata"]["pagination"]["totalPages"] = math.ceil(totalCount/pageSize)
+    return response, 200, None
