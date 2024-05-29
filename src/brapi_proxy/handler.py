@@ -1,3 +1,5 @@
+# pylint: disable=line-too-long
+
 """Handler BrAPI requests"""
 
 import math
@@ -69,13 +71,14 @@ def brapiGetRequest(server,call,**args):
     try:
         params = args.get("params",{})
         headers = {"Accept": "application/json"}
+        if not server["authorization"] is None:
+            headers["Authorization"] = "Bearer {}".format(server["authorization"])
         url = "{}/{}".format(server["url"],call)
         response = requests.get(url, params=params, headers=headers)
         try:
             if response.ok:
                 return response.json(), response.status_code, None
-            else:
-                return None, response.status_code, response.text
+            return None, response.status_code, response.text
         except:
             return None, 500, response.text
     except Exception as e:
@@ -84,37 +87,20 @@ def brapiGetRequest(server,call,**args):
 def brapiPostRequest(server,call,payload):
     try:
         headers = {"Accept": "application/json"}
+        if not server["authorization"] is None:
+            headers["Authorization"] = "Bearer {}".format(server["authorization"])
         url = "{}/{}".format(server["url"],call)
         response = requests.post(url, data=payload, headers=headers)
         try:
             if response.ok:
                 return response.json(), response.status_code, None
-            else:
-                return None, response.status_code, response.text
+            return None, response.status_code, response.text
         except:
             return None, 500, response.text
     except Exception as e:
         return None, 500, "error: {}".format(str(e))
 
-def brapiPostRequestResponse(brapi, call, payload):
-    #get servers
-    servers = []
-    for server in brapi["calls"][call]:
-        servers.append(brapi["servers"].get(server,{}))
-    #construct response
-    response = {}
-    response["@context"] = ["https://brapi.org/jsonld/context/metadata.jsonld"]
-    response["metadata"] = {}
-    for server in servers:
-        try:
-            if ("post", call) in brapi["calls"][call][server["name"]]:
-                itemResponse,itemStatus,itemError = brapiPostRequest(server,serverCall,payload)
-        except Exception as e:
-                return None, 500, "problem processing response from {}: {}".format(
-                    server["name"],str(e))
-    return None, 501, "unsupported post to {}".format(call)
-
-def brapiIdRequestResponse(brapi, call, name, id, method="get", **args):
+def brapiIdRequestResponse(brapi, call, name, id, method="get"):
     #get servers
     servers = []
     for server in brapi["calls"][call]:
@@ -157,9 +143,8 @@ def brapiIdRequestResponse(brapi, call, name, id, method="get", **args):
                                         if data[0][name]==id:
                                             response["result"] = data[0]
                                             return response, 200, None
-                                        else:
-                                            logger.warning("unexpected response with "+
-                                                           "{}: {} from {}".format(
+                                        logger.warning("unexpected response with "+
+                                                        "{}: {} from {}".format(
                                                 name,data[0][name],server["name"]))
                                     else:
                                         logger.warning("unexpected response without "+
@@ -178,7 +163,6 @@ def brapiIdRequestResponse(brapi, call, name, id, method="get", **args):
         return None, 404, "{} {} not found in {}".format(name,id,call)
     else:
         return None, 501, "unsupported method {}".format(method)
-
 
 def brapiRepaginateRequestResponse(brapi, call, **args):
     #get servers

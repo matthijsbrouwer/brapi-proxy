@@ -58,6 +58,9 @@ A [BrAPI](https://brapi.org/) server instance that functions as a proxy to merge
   - /studies/{studyDbId}
   - /trials
   - /trials/{trialDbId}
+- BrAPI-Phenotyping
+  - /ontologies
+  - /ontologies/{ontologyDbId}
 - BrAPI-Genotyping
   - /allelematrix
   - /callsets
@@ -74,12 +77,13 @@ A [BrAPI](https://brapi.org/) server instance that functions as a proxy to merge
   - /variants/{variantDbId}
   - /variantsets
   - /variantsets/{variantSetDbId}
-  
+- BrAPI-Germplasm
+  - /breedingmethods
+  - /breedingmethods/{breedingMethodDbId}
+
 ### ToDo
 
 - Implement additional endpoints
-- Possibly support other methods (now only get)
-- Enable authentication for underlying servers
   
 ---
 
@@ -101,6 +105,20 @@ debug=False
 version=2.1
 ```
 
+**Optional: Serverinfo**
+
+Optionally, provide `serverinfo` entries:
+
+```
+contactEmail=noreply@wur.nl
+documentationURL=https://github.com/matthijsbrouwer/brapi-proxy/
+location=Wageningen
+organizationName=Wageningen University and Research
+organizationURL=https://www.plantbreeding.wur.nl/
+serverDescription=Demo-version proxy to combine multiple BrAPI services
+serverName=BrAPI-Proxy
+```
+
 **Optional: Authorization**
 
 Optionally, provide authentication tokens to restrict access in the `authorization` section:
@@ -119,6 +137,7 @@ Within sections prefixed with `server.`, define the underlying servers:
 [server.test1]
 url=https://test-server.brapi.org/brapi/v2
 calls=commoncropnames,variants,allelematrix
+authorization=XXXX
 prefix.variants=barley:
 prefix.variantsets=barley:
 prefix.references=barley:

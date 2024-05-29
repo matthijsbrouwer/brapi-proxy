@@ -1,3 +1,5 @@
+# pylint: disable=line-too-long
+
 """Main BrAPI module"""
 
 import os
@@ -13,12 +15,21 @@ from flask_restx.apidoc import apidoc
 from waitress import serve
 
 from . import handler
+from ._version import __version__
 from .core import calls_api_core, ns_api_core
+from .phenotyping import calls_api_phenotyping, ns_api_phenotyping
 from .genotyping import calls_api_genotyping, ns_api_genotyping
+from .germplasm import calls_api_germplasm, ns_api_germplasm
+
+api_list = [(calls_api_core, ns_api_core),
+            (calls_api_phenotyping, ns_api_phenotyping),
+            (calls_api_genotyping, ns_api_genotyping),
+            (calls_api_germplasm, ns_api_germplasm)]
 
 supportedCalls = {}
-for key,value in calls_api_core.items(): supportedCalls[key] = (value[0],value[1],value[2])
-for key,value in calls_api_genotyping.items(): supportedCalls[key] = (value[0],value[1],value[2])
+for api_entry in api_list:
+    for supportedCall,value in api_entry[0].items():
+        supportedCalls[supportedCall] = value
 
 class BrAPI:
     """Main BrAPI class"""
@@ -43,8 +54,7 @@ class BrAPI:
             self.logger.debug("run in debug mode")
         else:
             self.logger.setLevel(logging.INFO)
-        self.version = self.config.get("brapi","version",fallback="2.1")
-        assert self.version in ["2.1"], "version {} not supported".format(self.version)
+        self.version = self.config.get("brapi","version",fallback=__version__)
         #restart on errors
         while True:
             try:
@@ -76,8 +86,8 @@ class BrAPI:
                 "name": "Authorization"
             }
         }
-        api_title = self.config.get("brapi","serverName",fallback="BrAPI")
-        api_description = self.config.get("brapi","serverDescription",fallback="The Breeding API")
+        api_title = self.config.get("serverinfo","serverName",fallback="BrAPI")
+        api_description = self.config.get("serverinfo","serverDescription",fallback="The Breeding API")
         api = Api(blueprint, title=api_title,
                   authorizations=authorizations, security="apikey",
                   description=api_description, version=self.version)
@@ -86,11 +96,17 @@ class BrAPI:
         api.config = self.config
         api.brapi = {
             "servers": {},
-            "calls": {"serverinfo":{}},
+            "calls": {"serverinfo": {
+                "resources": supportedCalls["serverinfo"].get("resources",[]),
+                "acceptedVersions": supportedCalls["serverinfo"].get("acceptedVersions",[]),
+                "additionalVersions": supportedCalls["serverinfo"].get("acceptedVersions",[]),
+                "servers":{}
+            }},
             "authorization": {},
-            "identifiers": {call : value[0] for call,value in supportedCalls.items()},
-            "version": self.version
+            "identifiers": {call : value.get("identifier",None) for call,value in supportedCalls.items()}
         }
+        #check serverinfo
+        assert "serverinfo" in supportedCalls, "serverinfo should be supported"
         #get configuration
         if self.config.has_section("authorization"):
             for option in self.config.options("authorization"):
@@ -102,11 +118,14 @@ class BrAPI:
             if self.config.has_option(server_section,"url"):
                 api.brapi["servers"][server_name] = {}
                 api.brapi["servers"][server_name]["url"] = self.config.get(server_section,"url")
+                api.brapi["servers"][server_name]["authorization"] = None
                 api.brapi["servers"][server_name]["name"] = server_name
                 api.brapi["servers"][server_name]["calls"] = []
                 api.brapi["servers"][server_name]["prefixes"] = {}
                 for key in self.config.options(server_section):
-                    if key.startswith("prefix."):
+                    if key=="authorization":
+                        api.brapi["servers"][server_name][key] = self.config.get(server_section,key)
+                    elif key.startswith("prefix."):
                         api.brapi["servers"][server_name]["prefixes"][key[7:]] = str(
                             self.config.get(server_section,key))
                 serverinfo,_,_ = handler.brapiGetRequest(
@@ -115,74 +134,92 @@ class BrAPI:
                     self.logger.error("server %s unreachable",server_name)
                     time.sleep(60)
                     raise ConnectionError("retry because server {} unreachable".format(server_name))
+                #get serverinfo versions
+                server_calls = serverinfo.get("result",{}).get("calls",[])
+                serverinfo_versions = []
+                for server_call in server_calls:
+                    if server_call.get("service")=="serverinfo":
+                        serverinfo_versions.extend(server_call.get("versions"))
                 if self.config.has_option(server_section,"calls"):
-                    calls = self.config.get(server_section,"calls").split(",")
-                    server_calls = serverinfo.get("result",{}).get("calls",[])
                     #get available method/services with the right version and contentType
                     availableServerCalls = set()
+                    availableServerCallVersions = {}
                     for server_call in server_calls:
                         if (
-                            "application/json" in server_call.get("contentTypes",[])
-                            and
-                            "application/json" in server_call.get("dataTypes",[])
-                            and
-                            self.version in server_call.get("versions",[])
+                            ("application/json" in server_call.get("contentTypes",[])
+                            or
+                            "application/json" in server_call.get("dataTypes",[]))
                         ) :
                             for method in server_call.get("methods",[]):
-                                availableServerCalls.add((str(method).lower(),server_call.get("service")))
+                                method_service = (str(method).lower(),server_call.get("service"))
+                                availableServerCalls.add(method_service)
+                                availableServerCallVersions[method_service] = server_call.get("versions",[])
+                    #get configured calls
+                    calls = set()
+                    for callEntry in self.config.get(server_section,"calls").split(","):
+                        if callEntry=="*":
+                            for call,call_value in supportedCalls.items():
+                                if availableServerCalls.issuperset(call_value.get("requiredServices",[])):
+                                    calls.add(call)
+                        elif callEntry.endswith(".*"):
+                            namespace = callEntry[:-2]
+                            for call,call_value in supportedCalls.items():
+                                if not value.get("namespace",None)==namespace:
+                                    continue
+                                if availableServerCalls.issuperset(call_value.get("requiredServices",[])):
+                                    calls.add(call)
+                        else:
+                            calls.add(callEntry)
+                    #try to add configured calls
                     for call in calls:
                         if not call in supportedCalls:
                             self.logger.warning(
                                 "call %s for %s not supported by proxy",call,server_name)
-                        elif not availableServerCalls.issuperset(supportedCalls[call][1]):
-                            self.logger.warning(
-                                "call %s not supported by %s",call,server_name)
                         else:
+                            requiredServices = supportedCalls[call].get("requiredServices",[])
+                            if not availableServerCalls.issuperset(requiredServices):
+                                self.logger.warning(
+                                    "call %s not supported by %s",call,server_name)
+                                continue
+                            if len(requiredServices)>0:
+                                versions = set.intersection(*[set(availableServerCallVersions[method_service])
+                                                              for method_service in requiredServices])
+                                if len(set(supportedCalls[call].get("acceptedVersions",[])).intersection(versions))==0:
+                                    self.logger.warning(
+                                        "call %s not supported by %s with right version",call,server_name)
+                                    continue
+                            #register call
                             if not call in api.brapi["calls"]:
-                                api.brapi["calls"][call] = {}
+                                api.brapi["calls"][call] = {
+                                    "resources": supportedCalls[call].get("resources",[]),
+                                    "acceptedVersions": supportedCalls[call].get("acceptedVersions",[]),
+                                    "additionalVersions": supportedCalls[call].get("acceptedVersions",[]),
+                                    "servers":{}
+                                }
                             if not server_name in api.brapi["calls"][call]:
-                                api.brapi["calls"][call][server_name] = []
-                            for server_call in server_calls:
-                                for method in server_call["methods"]:
-                                    callKey = (method.lower(),server_call["service"])
-                                    if callKey in supportedCalls[call][1] or callKey in supportedCalls[call][2]:
-                                        for method in server_call.get("methods"):
-                                            entry = (method.lower(),server_call.get("service"))
-                                            if entry in supportedCalls[call][1] or entry in supportedCalls[call][2]:
-                                                api.brapi["calls"][call][server_name].append(entry)
-                self.logger.debug("checked configuration server %s",server_name)
-        
-        #always provide core namespace
-        api.add_namespace(ns_api_core)
-        core_calls = set(calls_api_core.keys()).intersection(api.brapi["calls"])
-        core_calls.add("serverinfo")
-        for call in core_calls:
-            for resource in calls_api_core[call][3]:
-                servers = list(api.brapi["calls"][call].keys())
-                if len(servers)>0:
-                    shared = set.intersection(*[set([tuple(entry) for entry in item]) for item in api.brapi["calls"][call].values()])
-                else:
-                    shared = set()
-                methods = resource[0]._methods(shared,servers) if callable(getattr(resource[0], "_methods", None)) else ["get"]
-                ns_api_core.add_resource(resource[0], resource[1], methods=methods)
-        #genotyping namespace
-        genotyping_calls = set(calls_api_genotyping.keys()).intersection(api.brapi["calls"])
-        if len(genotyping_calls)>0:
-            api.add_namespace(ns_api_genotyping)
-            for call in genotyping_calls:
-                servers = list(api.brapi["calls"][call].keys())
-                shared = set.intersection(*[set([tuple(entry) for entry in item]) for item in api.brapi["calls"][call].values()])
-                if len(servers)>0:
-                    shared = set.intersection(*[set([tuple(entry) for entry in item]) for item in api.brapi["calls"][call].values()])
-                else:
-                    shared = set()
-                for resource in calls_api_genotyping[call][3]:
-                    methods = resource[0]._methods(shared,servers) if callable(getattr(resource[0], "_methods", None)) else ["get"]
-                    ns_api_genotyping.add_resource(resource[0], resource[1], methods=methods)
+                                api.brapi["calls"][call]["servers"][server_name] = []
+                            for entry in availableServerCalls:
+                                if (entry in supportedCalls[call].get("requiredServices",[]) or
+                                    entry in supportedCalls[call].get("optionalServices",[])):
+                                    api.brapi["calls"][call]["servers"][server_name].append(entry)
+                                    api.brapi["servers"][server_name]["calls"].append(entry)
+
+                self.logger.debug("checked serverinfo %s, supported versions: %s",server_name,",".join(serverinfo_versions))
+
+
+        #add namespaces
+        for api_entry in api_list:
+            api_calls = set(api_entry[0].keys()).intersection(api.brapi["calls"])
+            if len(api_calls)>0:
+                api.add_namespace(api_entry[1])
+                for call in api_calls:
+                    for resource in api_entry[0][call].get("resources",[]):
+                        api_entry[1].add_resource(resource[0], resource[1])
+
         #register blueprint
         app.register_blueprint(blueprint)
         app.config.SWAGGER_UI_DOC_EXPANSION = "list"
-        
+
         #--- start webserver ---
         server_host = self.config.get("brapi","host", fallback="0.0.0.0")
         server_port = self.config.get("brapi","port", fallback="8080")

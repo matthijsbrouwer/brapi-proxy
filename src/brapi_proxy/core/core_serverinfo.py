@@ -24,15 +24,21 @@ class CoreServerinfo(Resource):
         args = parser.parse_args(strict=True)
         try:
             result = {"calls": []}
-            for call,definition in self.api.__schema__["paths"].items():
-                entry = {
-                    "contentTypes":["application/json"],
-                    "dataTypes":["application/json"],
-                    "methods": [method.upper() for method in definition.keys() 
-                                if method.upper() in ["GET","PUT","POST","DELETE"]],
-                    "service": str(call).removeprefix("/"),
-                    "versions":[self.api.version]
-                }
+            for call,value in self.api.brapi["calls"].items():
+                versions = value.get("acceptedVersions",[])
+                for resource in value.get("resources",[]):
+                    methods = []
+                    # print(resource[0].methods)
+                    for method in ["get","post","put","delete"]:
+                        if hasattr(resource[0], method) and callable(getattr(resource[0],method)): 
+                            methods.append(method.upper())
+                    entry = {
+                        "contentTypes":["application/json"],
+                        "dataTypes":["application/json"],
+                        "methods": methods,
+                        "service": str(resource[1]).removeprefix("/"),
+                        "versions": versions
+                    }
                 result["calls"].append(entry)
             if not args["contentType"] is None:
                 result["calls"] = [entry for entry in result["calls"] if args["contentType"] in entry["contentTypes"]]

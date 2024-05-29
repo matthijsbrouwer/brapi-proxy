@@ -21,36 +21,89 @@ from .core_seasons import CoreSeasonsId
 from .core_lists import CoreLists
 from .core_lists import CoreListsId
 
-# callName: [
-#    <callIdentifierName>,
-#    [<requiredService>,...],
-#    [<optionalService>,...],
-#    [[<resourceClass,<location>],...]
-#]
-    
+# <callName> : {
+#     "namespace": <identifier>,
+#     "identifier": <identifier>,
+#     "acceptedVersions": [<version>,<version>,...],
+#     "additionalVersions": [<version>,<version>,...],
+#     "requiredServices": [(<method>,<service>),...],
+#     "optionalServices": [(<method>,<service>),...],
+#     "resources": [(<Resource>,<location>),...]
+# }
+
 calls_api_core = {
-    "serverinfo": (None,[],[],[(CoreServerinfo,"/serverinfo")]),
-    "commoncropnames": (None,[("get","commoncropnames")],[],
-                        [(CoreCommoncropnames,"/commoncropnames")]),
-    "studies": ("studyDbId",[("get","studies")],[("get","studies/{studyDbId}")],
-                [(CoreStudies,"/studies"),
-                (CoreStudiesId,"/studies/<studyDbId>")]),
-    "trials": ("trialDbId",[("get","trials")],[("get","trials/{trialDbId}")],
-               [(CoreTrials,"/trials"),
-                (CoreTrialsId,"/trials/<trialDbId>")]),
-    "programs": ("programDbId",[("get","programs")],[("get","programs/{programDbId}")],
-                 [(CorePrograms,"/programs"),
-                (CoreProgramsId,"/programs/<programDbId>")]),
-    "locations": ("locationDbId",[("get","locations")],[("get","locations/{locationDbId}")],
-                  [(CoreLocations,"/locations"),
-                (CoreLocationsId,"/locations/<locationDbId>")]),
-    "people": ("personDbId",[("get","people")],[("get","people/{personDbId}")],
-               [(CorePeople,"/people"),
-                (CorePeopleId,"/people/<personDbId>")]),
-    "seasons": ("seasonDbId",[("get","seasons")],[("get","seasons/{seasonDbId}")],
-                [(CoreSeasons,"/seasons"),
-                (CoreSeasonsId,"/seasons/<seasonDbId>")]),
-    "lists": ("listDbId",[("get","lists")],[("post","lists"),("get","lists/{listDbId}")],
-              [(CoreLists,"/lists"),
-                (CoreListsId,"/lists/<listDbId>")]),
+    "serverinfo": {
+        "namespace": ns_api_core.name,
+        "acceptedVersions": ["2.1","2.0"],
+        "requiredServices": [("get","serverinfo")],
+        "resources": [(CoreServerinfo,"/serverinfo")]
+    },
+    "commoncropnames": {
+        "namespace": ns_api_core.name,
+        "acceptedVersions": ["2.1","2.0"],
+        "requiredServices": [("get","commoncropnames")],
+        "resources": [(CoreCommoncropnames,"/commoncropnames")]
+    },
+    "studies": {
+        "namespace": ns_api_core.name,
+        "identifier": "studyDbId",
+        "acceptedVersions": ["2.1"],
+        "requiredServices": [("get","studies")],
+        "optionalServices": [("get","studies/{studyDbId}")],
+        "resources": [(CoreStudies,"/studies"),
+                      (CoreStudiesId,"/studies/<studyDbId>")]
+    },
+    "trials": {
+        "namespace": ns_api_core.name,
+        "identifier": "trialDbId",
+        "acceptedVersions": ["2.1"],
+        "requiredServices": [("get","trials")],
+        "optionalServices": [("get","trials/{trialDbId}")],
+        "resources": [(CoreTrials,"/trials"),
+                      (CoreTrialsId,"/trials/<trialDbId>")]
+    },
+    "programs": {
+        "namespace": ns_api_core.name,
+        "identifier": "programDbId",
+        "acceptedVersions": ["2.1"],
+        "requiredServices": [("get","programs")],
+        "optionalServices": [("get","programs/{programDbId}")],
+        "resources": [(CorePrograms,"/programs"),
+                      (CoreProgramsId,"/programs/<programDbId>")]
+    },
+    "locations": {
+        "namespace": ns_api_core.name,
+        "identifier": "locationDbId",
+        "acceptedVersions": ["2.1"],
+        "requiredServices": [("get","locations")],
+        "optionalServices": [("get","locations/{locationDbId}")],
+        "resources": [(CoreLocations,"/locations"),
+                      (CoreLocationsId,"/locations/<locationDbId>")]
+    },
+    "people": {
+        "namespace": ns_api_core.name,
+        "identifier": "personDbId",
+        "acceptedVersions": ["2.1"],
+        "requiredServices": [("get","people")],
+        "optionalServices": [("get","people/{personDbId}")],
+        "resources": [(CorePeople,"/people"),
+                      (CorePeopleId,"/people/<personDbId>")]
+    },
+    "seasons": {
+        "namespace": ns_api_core.name,
+        "identifier": "seasonDbId",
+        "acceptedVersions": ["2.1"],
+        "requiredServices": [("get","seasons")],
+        "optionalServices": [("get","seasons/{seasonDbId}")],
+        "resources": [(CoreSeasons,"/seasons"),
+                      (CoreSeasonsId,"/seasons/<seasonDbId>")]
+    },
+    "lists": {
+        "namespace": ns_api_core.name,
+        "identifier": "seasonDbId",
+        "acceptedVersions": ["2.1"],
+        "requiredServices": [("get","lists"),("get","lists/{listDbId}")],
+        "resources": [(CoreLists,"/lists"),
+                      (CoreListsId,"/lists/<listDbId>")]
+    }
 }
