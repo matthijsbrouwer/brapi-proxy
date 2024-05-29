@@ -264,7 +264,7 @@ def _mergeAllematrixDataMatrices(dataMatrices,newDataMatrices,
 def _brapiRepaginateAllelematrixRequestResponse(brapi, params):
     #get servers
     servers = []
-    for server in brapi["calls"]["allelematrix"]:
+    for server in brapi["calls"]["allelematrix"]["servers"]:
         servers.append(brapi["servers"].get(server,{}))
     #initialise result
     result = {

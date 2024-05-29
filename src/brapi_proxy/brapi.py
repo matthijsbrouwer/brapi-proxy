@@ -196,7 +196,7 @@ class BrAPI:
                                     "additionalVersions": supportedCalls[call].get("acceptedVersions",[]),
                                     "servers":{}
                                 }
-                            if not server_name in api.brapi["calls"][call]:
+                            if not server_name in api.brapi["calls"][call]["servers"]:
                                 api.brapi["calls"][call]["servers"][server_name] = []
                             for entry in availableServerCalls:
                                 if (entry in supportedCalls[call].get("requiredServices",[]) or

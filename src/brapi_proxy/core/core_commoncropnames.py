@@ -20,24 +20,24 @@ class CoreCommoncropnames(Resource):
     @handler.authorization
     def get(self):
         args = parser.parse_args(strict=True)
-        try:
-            #get parameters
-            page = int(args["page"]) if not args["page"] is None else 0
-            pageSize = int(args["pageSize"]) if not args["pageSize"] is None else 1000
-            params = {"page": page, "pageSize": pageSize}
-            for key,value in args.items():
-                if not key in ["page","pageSize","Authorization"]:
-                    if not value is None:
-                        params[key] = value
-            brapiResponse,brapiStatus,brapiError = handler.brapiRepaginateRequestResponse(
-                self.api.brapi, "commoncropnames", params=params)
-            if brapiResponse:
-                return Response(json.dumps(brapiResponse), mimetype="application/json")
-            else:
-                response = Response(brapiError, mimetype="content/text")
-                response.status_code = brapiStatus
-                return response
-        except Exception as e:
-            response = Response(str(e), mimetype="content/text")
-            response.status_code = 500
+        # try:
+        #get parameters
+        page = int(args["page"]) if not args["page"] is None else 0
+        pageSize = int(args["pageSize"]) if not args["pageSize"] is None else 1000
+        params = {"page": page, "pageSize": pageSize}
+        for key,value in args.items():
+            if not key in ["page","pageSize","Authorization"]:
+                if not value is None:
+                    params[key] = value
+        brapiResponse,brapiStatus,brapiError = handler.brapiRepaginateRequestResponse(
+            self.api.brapi, "commoncropnames", params=params)
+        if brapiResponse:
+            return Response(json.dumps(brapiResponse), mimetype="application/json")
+        else:
+            response = Response(brapiError, mimetype="content/text")
+            response.status_code = brapiStatus
             return response
+        # except Exception as e:
+        #     response = Response(str(e), mimetype="content/text")
+        #     response.status_code = 500
+        #     return response

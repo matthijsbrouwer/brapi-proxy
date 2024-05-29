@@ -67,7 +67,7 @@ def brapiResponse(result):
     response["result"] = result
     return response
 
-def brapiGetRequest(server,call,**args):
+def brapiGetRequest(server,call,**args): 
     try:
         params = args.get("params",{})
         headers = {"Accept": "application/json"}
@@ -103,7 +103,7 @@ def brapiPostRequest(server,call,payload):
 def brapiIdRequestResponse(brapi, call, name, id, method="get"):
     #get servers
     servers = []
-    for server in brapi["calls"][call]:
+    for server in brapi["calls"][call]["servers"]:
         servers.append(brapi["servers"].get(server,{}))
     #handle request
     callById="{}/{{{}}}".format(call,name)
@@ -118,7 +118,7 @@ def brapiIdRequestResponse(brapi, call, name, id, method="get"):
                 serverParams[name] = id
                 serverParams = prefixRewriteParams(serverParams,server["prefixes"], brapi["identifiers"])
                 if not serverParams is None:
-                    if (method, callById) in brapi["calls"][call][server["name"]]:
+                    if (method, callById) in brapi["calls"][call]["servers"][server["name"]]:
                         serverCall = "{}/{}".format(call,serverParams[name])
                         itemResponse,itemStatus,itemError = brapiGetRequest(server,serverCall)
                         if itemResponse:
@@ -129,7 +129,7 @@ def brapiIdRequestResponse(brapi, call, name, id, method="get"):
                                 return response, 200, None
                             except:
                                 logger.warning("unexpected response from {}".format(server["name"]))
-                    elif (method, call) in brapi["calls"][call][server["name"]]:
+                    elif (method, call) in brapi["calls"][call]["servers"][server["name"]]:
                         itemResponse,itemStatus,itemError = brapiGetRequest(
                             server,call,params=serverParams)
                         if itemResponse:
@@ -167,7 +167,7 @@ def brapiIdRequestResponse(brapi, call, name, id, method="get"):
 def brapiRepaginateRequestResponse(brapi, call, **args):
     #get servers
     servers = []
-    for server in brapi["calls"][call]:
+    for server in brapi["calls"][call]["servers"]:
         servers.append(brapi["servers"].get(server,{}))
     #handle request
     params = args.get("params",{})
