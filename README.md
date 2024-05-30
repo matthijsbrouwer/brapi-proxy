@@ -102,7 +102,7 @@ host=0.0.0.0
 location=/
 threads=4
 debug=False
-version=2.1
+version=1.2.3
 ```
 
 **Optional: Serverinfo**
@@ -156,6 +156,22 @@ prefix.callsets=wheat:
 [server.test3]
 url=https://test-server.brapi.org/brapi/v2
 calls=samples,studies,plates,callsets,variantsets,referencesets,references
+```
+
+To include all available and supported calls from a namespace:
+
+```
+[server.test3]
+url=https://test-server.brapi.org/brapi/v2
+calls=core.*
+```
+
+To include all available and supported calls:
+
+```
+[server.test3]
+url=https://test-server.brapi.org/brapi/v2
+calls=*
 ```
 
 ---

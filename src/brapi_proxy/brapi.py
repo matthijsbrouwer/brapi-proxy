@@ -120,7 +120,7 @@ class BrAPI:
                 api.brapi["servers"][server_name]["url"] = self.config.get(server_section,"url")
                 api.brapi["servers"][server_name]["authorization"] = None
                 api.brapi["servers"][server_name]["name"] = server_name
-                api.brapi["servers"][server_name]["calls"] = []
+                api.brapi["servers"][server_name]["calls"] = {}
                 api.brapi["servers"][server_name]["prefixes"] = {}
                 for key in self.config.options(server_section):
                     if key=="authorization":
@@ -164,7 +164,7 @@ class BrAPI:
                         elif callEntry.endswith(".*"):
                             namespace = callEntry[:-2]
                             for call,call_value in supportedCalls.items():
-                                if not value.get("namespace",None)==namespace:
+                                if not call_value.get("namespace",None)==namespace:
                                     continue
                                 if availableServerCalls.issuperset(call_value.get("requiredServices",[])):
                                     calls.add(call)
@@ -198,13 +198,16 @@ class BrAPI:
                                 }
                             if not server_name in api.brapi["calls"][call]["servers"]:
                                 api.brapi["calls"][call]["servers"][server_name] = []
+                            if not call in api.brapi["servers"][server_name]["calls"]:
+                                api.brapi["servers"][server_name]["calls"][call] = []
                             for entry in availableServerCalls:
                                 if (entry in supportedCalls[call].get("requiredServices",[]) or
                                     entry in supportedCalls[call].get("optionalServices",[])):
                                     api.brapi["calls"][call]["servers"][server_name].append(entry)
-                                    api.brapi["servers"][server_name]["calls"].append(entry)
+                                    api.brapi["servers"][server_name]["calls"][call].append(entry)
 
-                self.logger.debug("checked serverinfo %s, supported versions: %s",server_name,",".join(serverinfo_versions))
+                self.logger.debug("%s: checked serverinfo, supported versions: %s",server_name,", ".join(serverinfo_versions))
+                self.logger.debug("%s: calls: %s",server_name,", ".join(api.brapi["servers"][server_name]["calls"].keys()))
 
 
         #add namespaces

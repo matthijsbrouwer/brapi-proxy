@@ -20,7 +20,7 @@ calls_api_germplasm = {
     "breedingmethods": {
         "namespace": ns_api_germplasm.name,
         "identifier": "breedingMethodDbId",
-        "acceptedVersions": ["2.1"],
+        "acceptedVersions": ["2.1","2.0"],
         "requiredServices": [("get","breedingmethods")],
         "optionalServices": [("get","breedingmethods/{breedingMethodDbId}")],
         "resources": [(GermplasmBreedingMethods,"/breedingmethods"),

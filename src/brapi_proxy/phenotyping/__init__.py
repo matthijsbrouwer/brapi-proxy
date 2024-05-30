@@ -20,6 +20,7 @@ calls_api_phenotyping = {
     "ontologies": {
         "namespace": ns_api_phenotyping.name,
         "acceptedVersions": ["2.1"],
+        "additionalVersions": ["2.0"],
         "requiredServices": [("get","ontologies")],
         "optionalServices": [("get","ontologies/{ontologyDbId}")],
         "resources": [(PhenotypingOntologies,"/ontologies"),
