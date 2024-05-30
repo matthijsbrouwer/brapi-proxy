@@ -139,7 +139,9 @@ class BrAPI:
                 serverinfo_versions = []
                 for server_call in server_calls:
                     if server_call.get("service")=="serverinfo":
-                        serverinfo_versions.extend(server_call.get("versions"))
+                        serverinfo_versions.extend(server_call.get("versions",[]))
+                if len(set(supportedCalls["serverinfo"].get("acceptedVersions",[])).intersection(serverinfo_versions))==0:
+                    self.logger.warning("call serverinfo not supported by %s with right version",call,server_name)
                 if self.config.has_option(server_section,"calls"):
                     #get available method/services with the right version and contentType
                     availableServerCalls = set()
