@@ -39,7 +39,7 @@ class CoreServerinfo(Resource):
                         "service": str(resource[1]).removeprefix("/"),
                         "versions": versions
                     }
-                result["calls"].append(entry)
+                    result["calls"].append(entry)
             if not args["contentType"] is None:
                 result["calls"] = [entry for entry in result["calls"] if args["contentType"] in entry["contentTypes"]]
             elif not args["dataType"] is None:

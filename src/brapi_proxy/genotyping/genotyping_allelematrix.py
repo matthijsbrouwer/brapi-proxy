@@ -22,7 +22,7 @@ parser.add_argument("dataMatrixNames", type=str, required=False,
 parser.add_argument("dataMatrixAbbreviations", type=str, required=False,
         help="\"dataMatrixAbbreviations\" is a comma seperated list of abbreviations (ie ''GT, RD'' etc). This list controls which data matrices are returned in the response.<br> This maps to a FORMAT field in the VCF file standard.")
 parser.add_argument("positionRange", type=str, required=False,
-        help="The postion range to search\n<br/> Uses the format \"contig:start-end\" where \"contig\" is the chromosome or contig name, \"start\" is  \nthe starting position of the range, and \"end\" is the ending position of the range\n<br> Example: CRHOM_1:12000-14000")
+        help="The postion range to search\n<br/> Uses the format \"contig:start-end\" where \"contig\" is the chromosome or contig name, \"start\" is  \nthe starting position of the range, and \"end\" is the ending position of the range\n<br> Example: CHROM_1:12000-14000")
 parser.add_argument("germplasmDbId", type=str, required=False,
         help="Use this parameter to only return results associated with the given `Germplasm` unique identifier. \n<br/>Use `GET /germplasm` to find the list of available `Germplasm` on a server.")
 parser.add_argument("germplasmName", type=str, required=False,
