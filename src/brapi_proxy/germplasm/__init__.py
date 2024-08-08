@@ -5,6 +5,8 @@ ns_api_germplasm = Namespace("germplasm",
     path="/")
 
 from .germplasm_breedingmethods import GermplasmBreedingMethods,GermplasmBreedingMethodsId
+from .germplasm_attributes import GermplasmAttributes,GermplasmAttributesId
+from .germplasm_attributevalues import GermplasmAttributeValues,GermplasmAttributeValuesId
 
 # <callName> : {
 #     "namespace": <identifier>,
@@ -25,5 +27,23 @@ calls_api_germplasm = {
         "optionalServices": [("get","breedingmethods/{breedingMethodDbId}")],
         "resources": [(GermplasmBreedingMethods,"/breedingmethods"),
                       (GermplasmBreedingMethodsId,"/breedingmethods/<breedingMethodDbId>")]
+    },
+    "attributes": {
+        "namespace": ns_api_germplasm.name,
+        "identifier": "attributeDbId",
+        "acceptedVersions": ["2.1","2.0"],
+        "requiredServices": [("get","attributes")],
+        "optionalServices": [("get","attributes/{attributeDbId}")],
+        "resources": [(GermplasmAttributes,"/attributes"),
+                      (GermplasmAttributesId,"/attributes/<attributeDbId>")]
+    },
+    "attributevalues": {
+        "namespace": ns_api_germplasm.name,
+        "identifier": "attributeValueDbId",
+        "acceptedVersions": ["2.1","2.0"],
+        "requiredServices": [("get","attributevalues")],
+        "optionalServices": [("get","attributevalues/{attributeValueDbId}")],
+        "resources": [(GermplasmAttributeValues,"/attributevalues"),
+                      (GermplasmAttributeValuesId,"/attributevalues/<attributeValueDbId>")]
     },
 }

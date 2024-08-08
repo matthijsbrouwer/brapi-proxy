@@ -78,6 +78,10 @@ A [BrAPI](https://brapi.org/) server instance that functions as a proxy to merge
   - /variantsets
   - /variantsets/{variantSetDbId}
 - BrAPI-Germplasm
+  - /attributes
+  - /attributes/{attributeDbId}
+  - /attributevalues
+  - /attributevalues/{attributeValueDbId}
   - /breedingmethods
   - /breedingmethods/{breedingMethodDbId}
 
