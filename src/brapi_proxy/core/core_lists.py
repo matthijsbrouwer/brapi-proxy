@@ -34,7 +34,8 @@ class CoreLists(Resource):
     @namespace.expect(parser, validate=True)
     @handler.authorization
     def get(self):
-        args = parser.parse_args(strict=True)
+        strict = self.api.config.getboolean("brapi","strict") if self.api.config.has_option("brapi","strict") else False
+        args = parser.parse_args(strict=strict)
         try:            
             #get parameters
             page = int(args["page"]) if not args["page"] is None else 0
@@ -67,7 +68,8 @@ class CoreListsId(Resource):
     @namespace.expect(parserId, validate=True)
     @handler.authorization
     def get(self,listDbId):
-        parser.parse_args(strict=True)
+        strict = self.api.config.getboolean("brapi","strict") if self.api.config.has_option("brapi","strict") else False
+        args = parser.parse_args(strict=strict)
         try:
             brapiResponse,brapiStatus,brapiError = handler.brapiIdRequestResponse(
                 self.api.brapi, "lists", "listDbId", listDbId)

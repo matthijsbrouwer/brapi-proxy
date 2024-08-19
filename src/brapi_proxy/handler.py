@@ -60,10 +60,14 @@ def prefixRewriteParams(params,prefixes,identifiers):
                         return None
     return newParams
 
-def brapiResponse(result):
+def brapiResponse(result, status=[]):
     response = {}
     response["@context"] = ["https://brapi.org/jsonld/context/metadata.jsonld"]
-    response["metadata"] = {}
+    response["metadata"] = {
+        "datafiles": None,
+        "status": status,
+        "pagination": None
+    }
     response["result"] = result
     return response
 
@@ -111,7 +115,11 @@ def brapiIdRequestResponse(brapi, call, name, id, method="get"):
         #construct response
         response = {}
         response["@context"] = ["https://brapi.org/jsonld/context/metadata.jsonld"]
-        response["metadata"] = {}
+        response["metadata"] = {
+            "datafiles": None,
+            "status": [],
+            "pagination": None
+        }
         for server in servers:
             try:
                 serverParams = {}
@@ -182,10 +190,13 @@ def brapiRepaginateRequestResponse(brapi, call, **args):
     #construct response
     response = {}
     response["@context"] = ["https://brapi.org/jsonld/context/metadata.jsonld"]
-    response["metadata"] = {}
-    response["metadata"]["pagination"] = {
-        "currentPage": page,
-        "pageSize": pageSize
+    response["metadata"] = {
+        "datafiles": None,
+        "status": [],
+        "pagination": {
+            "currentPage": page,
+            "pageSize": pageSize
+        }
     }
     data = []
     totalCount = 0

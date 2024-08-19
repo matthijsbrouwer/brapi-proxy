@@ -52,7 +52,8 @@ class GenotypingAllelematrix(Resource):
     @namespace.expect(parser, validate=True)
     @handler.authorization
     def get(self):
-        args = parser.parse_args(strict=True)
+        strict = self.api.config.getboolean("brapi","strict") if self.api.config.has_option("brapi","strict") else False
+        args = parser.parse_args(strict=strict)
         try:
             #get parameters
             dimensionVariantPage = (int(args["dimensionVariantPage"]) 
@@ -401,8 +402,11 @@ def _brapiRepaginateAllelematrixRequestResponse(brapi, params):
     #construct response
     response = {}
     response["@context"] = ["https://brapi.org/jsonld/context/metadata.jsonld"]
-    response["metadata"] = {}
-    response["metadata"]["pagination"] = {}
+    response["metadata"] = {
+        "datafiles": None,
+        "status": [],
+        "pagination": None
+    }
     response["result"] = result
     return response, 200, None   
         
