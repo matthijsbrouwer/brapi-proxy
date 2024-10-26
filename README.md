@@ -84,6 +84,8 @@ A [BrAPI](https://brapi.org/) server instance that functions as a proxy to merge
   - /attributevalues/{attributeValueDbId}
   - /breedingmethods
   - /breedingmethods/{breedingMethodDbId}
+  - /germplasm
+  - /germplasm/{germplasmDbId}
 
 ### ToDo
 
