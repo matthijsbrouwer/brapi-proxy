@@ -5,6 +5,7 @@ ns_api_germplasm = Namespace("germplasm",
     path="/")
 
 from .germplasm_breedingmethods import GermplasmBreedingMethods,GermplasmBreedingMethodsId
+from .germplasm_germplasm import GermplasmGermplasm,GermplasmGermplasmId
 from .germplasm_attributes import GermplasmAttributes,GermplasmAttributesId
 from .germplasm_attributevalues import GermplasmAttributeValues,GermplasmAttributeValuesId
 
@@ -27,6 +28,15 @@ calls_api_germplasm = {
         "optionalServices": [("get","breedingmethods/{breedingMethodDbId}")],
         "resources": [(GermplasmBreedingMethods,"/breedingmethods"),
                       (GermplasmBreedingMethodsId,"/breedingmethods/<breedingMethodDbId>")]
+    },
+    "germplasm": {
+        "namespace": ns_api_germplasm.name,
+        "identifier": "germplasmDbId",
+        "acceptedVersions": ["2.1","2.0"],
+        "requiredServices": [("get","germplasm")],
+        "optionalServices": [("get","germplasm/{germplasmDbId}")],
+        "resources": [(GermplasmGermplasm,"/germplasm"),
+                      (GermplasmGermplasmId,"/germplasm/<germplasmDbId>")]
     },
     "attributes": {
         "namespace": ns_api_germplasm.name,

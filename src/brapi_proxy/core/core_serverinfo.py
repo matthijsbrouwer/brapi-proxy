@@ -49,6 +49,8 @@ class CoreServerinfo(Resource):
                          "organizationURL","serverDescription","serverName"]:
                 if self.api.config.has_option("serverinfo",item):
                     result[item] = str(self.api.config.get("serverinfo",item))
+                else:
+                    result[item] = None
             return Response(json.dumps(handler.brapiResponse(result)), mimetype="application/json") 
         except Exception as e:
             abort(e.code if hasattr(e,"code") else 500, str(e))
