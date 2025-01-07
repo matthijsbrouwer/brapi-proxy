@@ -59,8 +59,20 @@ A [BrAPI](https://brapi.org/) server instance that functions as a proxy to merge
   - /trials
   - /trials/{trialDbId}
 - BrAPI-Phenotyping
+  - /methods
+  - /methods/{methodDbId}
+  - /observations
+  - /observations/{observationDbId}
+  - /observationunits
+  - /observationunits/{observationUnitDbId}
   - /ontologies
   - /ontologies/{ontologyDbId}
+  - /scales
+  - /scales/{scaleDbId}
+  - /traits
+  - /traits/{traitDbId}
+  - /variables
+  - /variables{observationVariableDbId}
 - BrAPI-Genotyping
   - /allelematrix
   - /callsets
